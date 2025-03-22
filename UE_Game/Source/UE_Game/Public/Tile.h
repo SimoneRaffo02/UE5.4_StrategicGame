@@ -25,13 +25,19 @@ public:
 
 	void SetGridLocation(int32 X, int32 Y);
 
-	void SetTroop(TSubclassOf<ATroop>);
+	void SetTroop(ATroop& Troop);
+
+	void SetMoveType(FString NewMoveType);
 
 	ETileStatus GetTileStatus();
 
 	FVector2D GetGridLocation();
 
-	TSubclassOf<ATroop> GetTroop();
+	ATroop* GetTroop();
+
+	FString GetMoveType();
+
+	void SetTilesMaterial();
 
 protected:
 	virtual void BeginPlay() override;
@@ -42,6 +48,24 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* StaticMesh;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UStaticMeshComponent* ImageStaticMesh;
+
+	UPROPERTY(EditAnywhere, Category = "Material")
+	UMaterialInterface* FloorMaterial;
+
+	UPROPERTY(EditAnywhere, Category = "Material")
+	UMaterialInterface* MountainMaterial;
+
+	UPROPERTY(EditAnywhere, Category = "Material")
+	UMaterialInterface* MoveMaterial;
+
+	UPROPERTY(EditAnywhere, Category = "Material")
+	UMaterialInterface* AttackMaterial;
+
+	UPROPERTY(EditAnywhere, Category = "Material")
+	UMaterialInterface* CurrentPositionMaterial;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Info")
 	ETileStatus Status;
 
@@ -49,6 +73,8 @@ protected:
 	FVector2D GridLocation;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Info")
-	TSubclassOf<ATroop> Troop;
+	ATroop* Troop;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Info")
+	FString MoveType;
 };

@@ -6,9 +6,9 @@
 // Sets default values
 ATroop::ATroop()
 {
-	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	bSelected = false;
 }
 
 void ATroop::SetMovement(int32 NewMovement)
@@ -41,6 +41,11 @@ void ATroop::SetAttackType(FString NewAttackType)
 	AttackType = NewAttackType;
 }
 
+void ATroop::SetSelected(bool Value)
+{
+	bSelected = Value;
+}
+
 int32 ATroop::GetMovement()
 {
 	return Movement;
@@ -69,6 +74,11 @@ int32 ATroop::GetHealth()
 FString ATroop::GetAttackType()
 {
 	return AttackType;
+}
+
+bool ATroop::IsSelected()
+{
+	return bSelected;
 }
 
 // Called when the game starts or when spawned

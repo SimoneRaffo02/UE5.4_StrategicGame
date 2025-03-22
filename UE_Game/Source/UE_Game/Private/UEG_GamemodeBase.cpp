@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "UEG_GamemodeBase.h"
+#include "RandomPlayer.h"
 #include "UEG_PlayerController.h"
 #include "HumanPlayer.h"
 #include "EngineUtils.h"
@@ -10,6 +11,17 @@ AUEG_GamemodeBase::AUEG_GamemodeBase()
 	PlayerControllerClass = AUEG_PlayerController::StaticClass();
 	DefaultPawnClass = AHumanPlayer::StaticClass();
 	FieldSize = 25;
+	ObstaclesPercentage = 98;
+}
+
+int32 AUEG_GamemodeBase::GetFieldSize()
+{
+	return FieldSize;
+}
+
+AGameField* AUEG_GamemodeBase::GetGameField()
+{
+	return GField;
 }
 
 void AUEG_GamemodeBase::BeginPlay()
@@ -31,6 +43,9 @@ void AUEG_GamemodeBase::BeginPlay()
 	{
 		GField = GetWorld()->SpawnActor<AGameField>(GameFieldClass);
 		GField->SetFieldSize(FieldSize);
+		GField->SetObstaclesPercentage(ObstaclesPercentage);
+		GField->GenerateObstacles();
+		GField->SetTilesMaterial();
 	}
 	else
 	{
@@ -40,33 +55,32 @@ void AUEG_GamemodeBase::BeginPlay()
 	float CameraPosX = (GField->GetTileSize() * FieldSize - GField->GetTileSize()) / 2;
 	float Zposition = (GField->GetTileSize() * FieldSize - GField->GetTileSize()) / 2 + GField->GetTileSize() * 1.5f;
 	FVector CameraPos(CameraPosX, CameraPosX, Zposition);
-	HumanPlayer->SetActorLocationAndRotation(CameraPos, FRotator(-90, 0, 0));
+	HumanPlayer->SetActorLocationAndRotation(CameraPos, FRotator(-90, -90, 0));
+
+	//Random Player
+	ARandomPlayer* AI = GetWorld()->SpawnActor<ARandomPlayer>(FVector(), FRotator());
 
 	Players.Add(HumanPlayer);
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, TEXT("BeginPlay!"));
+	Players.Add(AI);
 	this->ChoosePlayerAndStartGame();
 }
 
 void AUEG_GamemodeBase::ChoosePlayerAndStartGame()
 {
 	//Da rendere randomico
-	CurrentPlayer = 0;
+	CurrentPlayer = FMath::RandRange(0, Players.Num() - 1);
 
 	for (int32 IndexI = 0; IndexI < Players.Num(); IndexI++)
 	{
 		Players[IndexI]->PlayerNumber = IndexI;
 	}
 
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, TEXT("ChoosePlayerAndStartGame!"));
-
-	//FVector SpawnLocation = FVector(0, 0, 20);
-	//PlaceTroop(0, SpawnLocation);
-
 	Players[CurrentPlayer]->OnTurn();
 }
 
 void AUEG_GamemodeBase::PlaceTroop(const int32 PlayerNumber, FVector& SpawnLocation)
 {
+	SpawnLocation.Z += 20;
 	if (bArcherPlacingTurn)
 	{
 		ATroop* Troop = nullptr;
@@ -89,6 +103,7 @@ void AUEG_GamemodeBase::PlaceTroop(const int32 PlayerNumber, FVector& SpawnLocat
 
 			Players[PlayerNumber]->GetTroops().Add(Troop);
 			Players[PlayerNumber]->UpdatePlacedArchers();
+			GField->GetTileByRelativeLocation(SpawnLocation)->SetTroop(*Troop);
 			bArcherPlacingTurn = false;
 			bKnightPlacingTurn = true;
 			for (int32 IndexI = 0; IndexI < Players.Num(); IndexI++)
@@ -128,7 +143,8 @@ void AUEG_GamemodeBase::PlaceTroop(const int32 PlayerNumber, FVector& SpawnLocat
 			Troop->SetHealth(40);
 
 			Players[PlayerNumber]->GetTroops().Add(Troop);
-			Players[PlayerNumber]->UpdatePlacedArchers();
+			Players[PlayerNumber]->UpdatePlacedKnights();
+			GField->GetTileByRelativeLocation(SpawnLocation)->SetTroop(*Troop);
 			bKnightPlacingTurn = false;
 			IsGameStarted = true;
 			for (int32 IndexI = 0; IndexI < Players.Num(); IndexI++)
@@ -167,6 +183,6 @@ int32 AUEG_GamemodeBase::GetNextPlayer(int32 Player)
 void AUEG_GamemodeBase::TurnNextPlayer()
 {
 	CurrentPlayer = GetNextPlayer(CurrentPlayer);
-	//Players[CurrentPlayer]->OnTurn();
+	Players[CurrentPlayer]->OnTurn();
 }
 

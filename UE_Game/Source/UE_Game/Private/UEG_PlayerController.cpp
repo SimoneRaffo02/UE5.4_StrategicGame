@@ -12,11 +12,9 @@ AUEG_PlayerController::AUEG_PlayerController()
 
 void AUEG_PlayerController::ClickOnGrid()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, TEXT("ClickOnGrid!"));
 	const auto HumanPlayer = Cast<AHumanPlayer>(GetPawn());
 	if (IsValid(HumanPlayer))
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, TEXT("Valid Human!"));
 		HumanPlayer->OnClick();
 	}
 }
@@ -28,7 +26,6 @@ void AUEG_PlayerController::BeginPlay()
 	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 	{
 		Subsystem->AddMappingContext(UEG_Context, 0);
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, TEXT("Valid Subsystem!"));
 	}
 }
 
@@ -40,7 +37,6 @@ void AUEG_PlayerController::SetupInputComponent()
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(InputComponent))
 	{
 		EnhancedInputComponent->BindAction(ClickAction, ETriggerEvent::Triggered, this, &AUEG_PlayerController::ClickOnGrid);
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, TEXT("Valid BindAction!"));
 	}
 }
 

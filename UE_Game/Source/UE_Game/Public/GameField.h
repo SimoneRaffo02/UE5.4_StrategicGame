@@ -15,9 +15,31 @@ public:
 
 	void GenerateField();
 
+	void GenerateObstacles();
+
 	void SetFieldSize(int32 NewFieldSize);
 
+	void SetObstaclesPercentage(float NewObstaclesPercentage);
+
+	void SetTilesMaterial();
+
+	bool CheckUnreachableTiles(int32 XPosition, int32 YPosition);
+
+	void UpdateAnalysisField(TMap<FVector2D, TArray<bool>>& AnalysisField, FVector2D CurrentLocation);
+
+	void EvaluatePossibleMoves(ATroop* Troop);
+
+	void SearchPaths(int32 StepNumber, ATroop& Troop, FVector2D CurrentLocation);
+
+	void ResetTilesMoveType();
+
 	int32 GetTileSize();
+
+	ATile* GetTile(int32 X, int32 Y);
+
+	ATile* GetTileByRelativeLocation(FVector RelativeLocation);
+
+	FVector2D GetGridLocationByRelativeLocation(FVector RelativeLocation);
 
 	FVector GetRelativeLocationByXY(int32 X, int32 Y);
 
@@ -37,4 +59,7 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tile")
 	TSubclassOf<ATile> TileClass;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float ObstaclesPercentage;
 };

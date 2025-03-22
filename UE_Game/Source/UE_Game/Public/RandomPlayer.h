@@ -2,20 +2,19 @@
 
 #pragma once
 
-#include "Camera/CameraComponent.h"
-#include "PlayerInterface.h"
 #include "CoreMinimal.h"
+#include "PlayerInterface.h"
 #include "GameFramework/Pawn.h"
-#include "HumanPlayer.generated.h"
+#include "RandomPlayer.generated.h"
 
 UCLASS()
-class UE_GAME_API AHumanPlayer : public APawn, public IPlayerInterface
+class UE_GAME_API ARandomPlayer : public APawn, public IPlayerInterface
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this pawn's properties
-	AHumanPlayer();
+	ARandomPlayer();
 
 	virtual void OnTurn() override;
 
@@ -23,21 +22,11 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	UCameraComponent* Camera;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	bool IsMyTurn;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	ATroop* SelectedTroop;
-
-public:
+public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	void OnClick();
 };

@@ -13,18 +13,19 @@ AHumanPlayer::AHumanPlayer()
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
-
+	Camera->SetRelativeRotation(FRotator(0, 0, 0));
 	Camera->FieldOfView = 120;
 
 	SetRootComponent(Camera);
 
 	PlayerNumber = 0;
+
+	SelectedTroop = nullptr;
 }
 
 void AHumanPlayer::OnTurn()
 {
 	IsMyTurn = true;
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, TEXT("OnTurn!"));
 }
 
 // Called when the game starts or when spawned
@@ -50,7 +51,6 @@ void AHumanPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 void AHumanPlayer::OnClick()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, TEXT("OnClick!"));
 	FHitResult Hit = FHitResult(ForceInit);
 
 	GetWorld()->GetFirstPlayerController()->GetHitResultUnderCursor(ECollisionChannel::ECC_Pawn, true, Hit);
@@ -73,7 +73,34 @@ void AHumanPlayer::OnClick()
 		}
 		else if (GamemodeBase->IsGameStarted)
 		{
-
+			//Selezione truppa
+			if (ATroop* CurrentTroop = Cast<ATroop>(Hit.GetActor()))
+			{
+				if (Troops.Contains(CurrentTroop))
+				{
+					if (SelectedTroop != nullptr)
+					{
+						for (ATroop* Troop : Troops)
+						{
+							if (Troop->IsSelected())
+							{
+								Troop->SetSelected(false);
+							}
+						}
+						GamemodeBase->GetGameField()->ResetTilesMoveType();
+					}
+					CurrentTroop->SetSelected(true);
+					SelectedTroop = CurrentTroop;
+					GamemodeBase->GetGameField()->EvaluatePossibleMoves(CurrentTroop);
+				}
+			}
+			else if (ATile* CurrentTile = Cast<ATile>(Hit.GetActor()))
+			{
+				if (SelectedTroop != nullptr)
+				{
+					
+				}
+			}
 		}
 		else {
 

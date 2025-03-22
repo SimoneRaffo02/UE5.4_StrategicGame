@@ -19,6 +19,10 @@ class UE_GAME_API AUEG_GamemodeBase : public AGameModeBase
 public:
 	AUEG_GamemodeBase();
 
+	int32 GetFieldSize();
+	
+	AGameField* GetGameField();
+
 	TArray<IPlayerInterface*> Players;
 
 	int32 CurrentPlayer;
@@ -37,8 +41,11 @@ public:
 
 protected:
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 FieldSize;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float ObstaclesPercentage;
 
 	UPROPERTY(VisibleAnywhere)
 	AGameField* GField;

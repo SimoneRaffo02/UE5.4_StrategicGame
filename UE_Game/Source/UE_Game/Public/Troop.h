@@ -27,6 +27,8 @@ public:
 
 	void SetAttackType(FString NewAttackType);
 
+	void SetSelected(bool Value);
+
 	int32 GetMovement();
 
 	int32 GetAttackRange();
@@ -38,6 +40,8 @@ public:
 	int32 GetHealth();
 
 	FString GetAttackType();
+
+	bool IsSelected();
 
 protected:
 	// Called when the game starts or when spawned
@@ -60,6 +64,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	FString AttackType;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool bSelected;
 
 public:
 	// Called every frame
