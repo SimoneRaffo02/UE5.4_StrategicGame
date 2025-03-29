@@ -27,6 +27,8 @@ public:
 
 	int32 CurrentPlayer;
 
+	int32 CurrentTurn;
+
 	int32 ArchersNumber;
 
 	int32 KnightsNumber;
@@ -38,6 +40,14 @@ public:
 	bool IsGameStarted = false;
 
 	bool IsGameOver = false;
+
+	int TroopPlacingHeight;
+
+	double StepTime;
+
+	int32 StepsForTile;
+
+	double CurrentTime;
 
 protected:
 

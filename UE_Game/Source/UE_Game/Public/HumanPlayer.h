@@ -19,6 +19,12 @@ public:
 
 	virtual void OnTurn() override;
 
+	void SetMoved(bool Value);
+
+	bool CanMove();
+
+	ATroop* GetSelectedTroop();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -31,6 +37,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	ATroop* SelectedTroop;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool Moved;
 
 public:
 	// Called every frame

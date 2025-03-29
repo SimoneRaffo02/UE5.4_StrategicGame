@@ -10,8 +10,15 @@ AUEG_GamemodeBase::AUEG_GamemodeBase()
 {
 	PlayerControllerClass = AUEG_PlayerController::StaticClass();
 	DefaultPawnClass = AHumanPlayer::StaticClass();
+	
 	FieldSize = 25;
-	ObstaclesPercentage = 98;
+	ObstaclesPercentage = 50;
+	TroopPlacingHeight = 20;
+
+	StepTime = 0.01;
+	StepsForTile = 10;
+
+	CurrentTurn = 0;
 }
 
 int32 AUEG_GamemodeBase::GetFieldSize()
@@ -67,8 +74,8 @@ void AUEG_GamemodeBase::BeginPlay()
 
 void AUEG_GamemodeBase::ChoosePlayerAndStartGame()
 {
-	//Da rendere randomico
-	CurrentPlayer = FMath::RandRange(0, Players.Num() - 1);
+	CurrentPlayer = 0;
+	//CurrentPlayer = FMath::RandRange(0, Players.Num() - 1);
 
 	for (int32 IndexI = 0; IndexI < Players.Num(); IndexI++)
 	{
@@ -80,7 +87,7 @@ void AUEG_GamemodeBase::ChoosePlayerAndStartGame()
 
 void AUEG_GamemodeBase::PlaceTroop(const int32 PlayerNumber, FVector& SpawnLocation)
 {
-	SpawnLocation.Z += 20;
+	SpawnLocation.Z += TroopPlacingHeight;
 	if (bArcherPlacingTurn)
 	{
 		ATroop* Troop = nullptr;
@@ -95,7 +102,7 @@ void AUEG_GamemodeBase::PlaceTroop(const int32 PlayerNumber, FVector& SpawnLocat
 		if (Troop != nullptr)
 		{
 			Troop->SetMovement(3);
-			Troop->SetAttackType(TEXT("Attacco a distanza"));
+			Troop->SetAttackType(EAttackType::RANGED);
 			Troop->SetAttackRange(10);
 			Troop->SetMinAttackDamage(4);
 			Troop->SetMaxAttackDamage(8);
@@ -103,7 +110,7 @@ void AUEG_GamemodeBase::PlaceTroop(const int32 PlayerNumber, FVector& SpawnLocat
 
 			Players[PlayerNumber]->GetTroops().Add(Troop);
 			Players[PlayerNumber]->UpdatePlacedArchers();
-			GField->GetTileByRelativeLocation(SpawnLocation)->SetTroop(*Troop);
+			GField->GetTileByRelativeLocation(SpawnLocation)->SetTroop(Troop);
 			bArcherPlacingTurn = false;
 			bKnightPlacingTurn = true;
 			for (int32 IndexI = 0; IndexI < Players.Num(); IndexI++)
@@ -136,7 +143,7 @@ void AUEG_GamemodeBase::PlaceTroop(const int32 PlayerNumber, FVector& SpawnLocat
 		if (Troop != nullptr)
 		{
 			Troop->SetMovement(6);
-			Troop->SetAttackType(TEXT("Attacco a corto raggio"));
+			Troop->SetAttackType(EAttackType::MELEE);
 			Troop->SetAttackRange(1);
 			Troop->SetMinAttackDamage(1);
 			Troop->SetMaxAttackDamage(6);
@@ -144,7 +151,7 @@ void AUEG_GamemodeBase::PlaceTroop(const int32 PlayerNumber, FVector& SpawnLocat
 
 			Players[PlayerNumber]->GetTroops().Add(Troop);
 			Players[PlayerNumber]->UpdatePlacedKnights();
-			GField->GetTileByRelativeLocation(SpawnLocation)->SetTroop(*Troop);
+			GField->GetTileByRelativeLocation(SpawnLocation)->SetTroop(Troop);
 			bKnightPlacingTurn = false;
 			IsGameStarted = true;
 			for (int32 IndexI = 0; IndexI < Players.Num(); IndexI++)
@@ -184,5 +191,6 @@ void AUEG_GamemodeBase::TurnNextPlayer()
 {
 	CurrentPlayer = GetNextPlayer(CurrentPlayer);
 	Players[CurrentPlayer]->OnTurn();
+	CurrentTurn++;
 }
 

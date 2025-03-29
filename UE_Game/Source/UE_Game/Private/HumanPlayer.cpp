@@ -26,6 +26,22 @@ AHumanPlayer::AHumanPlayer()
 void AHumanPlayer::OnTurn()
 {
 	IsMyTurn = true;
+	Moved = false;
+}
+
+void AHumanPlayer::SetMoved(bool Value)
+{
+	Moved = Value;
+}
+
+bool AHumanPlayer::CanMove()
+{
+	return !Moved;
+}
+
+ATroop* AHumanPlayer::GetSelectedTroop()
+{
+	return SelectedTroop;
 }
 
 // Called when the game starts or when spawned
@@ -39,7 +55,6 @@ void AHumanPlayer::BeginPlay()
 void AHumanPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 // Called to bind functionality to input
@@ -76,34 +91,64 @@ void AHumanPlayer::OnClick()
 			//Selezione truppa
 			if (ATroop* CurrentTroop = Cast<ATroop>(Hit.GetActor()))
 			{
-				if (Troops.Contains(CurrentTroop))
+				if (Troops.Contains(CurrentTroop) && !Moved)
 				{
-					if (SelectedTroop != nullptr)
+					if (Troops.Contains(CurrentTroop))
 					{
-						for (ATroop* Troop : Troops)
+						if (CurrentTroop == SelectedTroop)
 						{
-							if (Troop->IsSelected())
-							{
-								Troop->SetSelected(false);
-							}
+							CurrentTroop->SetSelected(false);
+							SelectedTroop = nullptr;
+							GamemodeBase->GetGameField()->ResetTilesMoveType();
+							GamemodeBase->GetGameField()->SetTilesMaterial();
+							UE_LOG(LogTemp, Log, TEXT("Cliccato due volte"));
 						}
-						GamemodeBase->GetGameField()->ResetTilesMoveType();
+						else
+						{
+							if (SelectedTroop != nullptr)
+							{
+								for (ATroop* Troop : Troops)
+								{
+									if (Troop->IsSelected())
+									{
+										Troop->SetSelected(false);
+									}
+								}
+								GamemodeBase->GetGameField()->ResetTilesMoveType();
+							}
+							CurrentTroop->SetSelected(true);
+							SelectedTroop = CurrentTroop;
+							GamemodeBase->GetGameField()->EvaluatePossibleMoves(CurrentTroop);
+							GamemodeBase->GetGameField()->SetTilesMaterial();
+						}
 					}
-					CurrentTroop->SetSelected(true);
-					SelectedTroop = CurrentTroop;
-					GamemodeBase->GetGameField()->EvaluatePossibleMoves(CurrentTroop);
 				}
 			}
 			else if (ATile* CurrentTile = Cast<ATile>(Hit.GetActor()))
 			{
 				if (SelectedTroop != nullptr)
 				{
-					
+					if (CurrentTile->GetMoveType() == EMoveType::MOVE && !Moved)
+					{
+						Moved = true; 
+						TArray<pair<int32, int32>> Path;
+						pair<int32, int32> Src = make_pair(GamemodeBase->GetGameField()->GetGridLocationByRelativeLocation(SelectedTroop->GetActorLocation()).X, GamemodeBase->GetGameField()->GetGridLocationByRelativeLocation(SelectedTroop->GetActorLocation()).Y);
+						pair<int32, int32> Dest = make_pair(CurrentTile->GetGridLocation().X, CurrentTile->GetGridLocation().Y);
+						GamemodeBase->GetGameField()->AStar(Src, Dest, Path);
+						GamemodeBase->GetGameField()->DrawPath(Path);
+						SelectedTroop->SetCurrentPath(Path);
+						GamemodeBase->GetGameField()->ResetTilesMoveType();
+						GamemodeBase->GetGameField()->SetTilesMaterial();
+					}
+					if (CurrentTile->GetMoveType() == EMoveType::ATTACK)
+					{
+
+					}
 				}
 			}
 		}
 		else {
-
+			
 		}
 	}
 }

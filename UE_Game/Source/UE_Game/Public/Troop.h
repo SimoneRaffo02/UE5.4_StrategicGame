@@ -2,9 +2,19 @@
 
 #pragma once
 
+#include <utility>
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Troop.generated.h"
+
+using namespace std;
+
+UENUM()
+enum class EAttackType : uint8
+{
+	RANGED	UMETA(DisplayName = "RANGED"),
+	MELEE	UMETA(DisplayName = "MELEE")
+};
 
 UCLASS()
 class UE_GAME_API ATroop : public AActor
@@ -25,9 +35,11 @@ public:
 
 	void SetHealth(int32 NewHealth);
 
-	void SetAttackType(FString NewAttackType);
+	void SetAttackType(EAttackType NewAttackType);
 
 	void SetSelected(bool Value);
+
+	void SetCurrentPath(TArray<pair<int32, int32>> Path);
 
 	int32 GetMovement();
 
@@ -39,7 +51,7 @@ public:
 
 	int32 GetHealth();
 
-	FString GetAttackType();
+	EAttackType GetAttackType();
 
 	bool IsSelected();
 
@@ -63,10 +75,20 @@ protected:
 	int32 Health;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	FString AttackType;
+	EAttackType AttackType;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool bSelected;
+
+	TArray<std::pair<int32, int32>> CurrentPath;
+
+	bool IsMoving;
+
+	int32 PathIndex;
+
+	int32 StepsTaken;
+
+	double CurrentTime;
 
 public:
 	// Called every frame

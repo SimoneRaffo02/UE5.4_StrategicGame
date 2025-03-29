@@ -156,93 +156,417 @@ void AGameField::UpdateAnalysisField(TMap<FVector2D, TArray<bool>>& AnalysisFiel
 void AGameField::EvaluatePossibleMoves(ATroop* Troop)
 {
 	FVector2D TroopLocation = GetGridLocationByRelativeLocation(Troop->GetActorLocation());
-	SearchPaths(0, *Troop, TroopLocation);
-	SetTilesMaterial();
+	int32 XPosition = FMath::RoundToInt(TroopLocation.X);
+	int32 YPosition = FMath::RoundToInt(TroopLocation.Y);
+	TroopLocation = FVector2D(XPosition, YPosition);
+	SearchMovePaths(0, *Troop, TroopLocation);
+	SearchAttackPaths(0, *Troop, TroopLocation);
 }
 
-void AGameField::SearchPaths(int32 StepNumber, ATroop& Troop, FVector2D CurrentLocation)
+void AGameField::SearchMovePaths(int32 StepNumber, ATroop& Troop, FVector2D CurrentLocation)
 {
 	if (StepNumber < Troop.GetMovement())
 	{
-
-		if (Field[CurrentLocation]->GetTileStatus() == ETileStatus::OCCUPIED && Field[CurrentLocation]->GetTroop() != &Troop)
+		if (Field.Find(CurrentLocation) && Field[CurrentLocation]->GetTileStatus() == ETileStatus::OCCUPIED && Field[CurrentLocation]->GetTroop() != &Troop)
 		{
 			return;
 		}
 		AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
-		if (CurrentLocation.X - 1 >= 0)
+		if (CurrentLocation.X - 1 >= 0 && Field.Find(FVector2D(CurrentLocation.X - 1, CurrentLocation.Y)))
 		{
 			ATile* LeftTile = Field[FVector2D(CurrentLocation.X - 1, CurrentLocation.Y)];
 			if (LeftTile->GetTileStatus() == ETileStatus::FREE)
 			{
-				LeftTile->SetMoveType("Move");
-				SearchPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X - 1, CurrentLocation.Y));
-			}
-			else if (LeftTile->GetTileStatus() == ETileStatus::OCCUPIED && GamemodeBase->Players[GamemodeBase->GetNextPlayer(GamemodeBase->CurrentPlayer)]->GetTroops().Contains(LeftTile->GetTroop()))
-			{
-				LeftTile->SetMoveType("Attack");
-				SearchPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X - 1, CurrentLocation.Y));
+				LeftTile->SetMoveType(EMoveType::MOVE);
+				SearchMovePaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X - 1, CurrentLocation.Y));
 			}
 		}
-		if (CurrentLocation.X + 1 < FieldSize)
+		if (CurrentLocation.X + 1 < FieldSize && Field.Find(FVector2D(CurrentLocation.X + 1, CurrentLocation.Y)))
 		{
 			ATile* RightTile = Field[FVector2D(CurrentLocation.X + 1, CurrentLocation.Y)];
 			if (RightTile->GetTileStatus() == ETileStatus::FREE)
 			{
-				RightTile->SetMoveType("Move");
-				SearchPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X + 1, CurrentLocation.Y));
-			}
-			else if (RightTile->GetTileStatus() == ETileStatus::OCCUPIED && GamemodeBase->Players[GamemodeBase->GetNextPlayer(GamemodeBase->CurrentPlayer)]->GetTroops().Contains(RightTile->GetTroop()))
-			{
-				RightTile->SetMoveType("Attack");
-				SearchPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X + 1, CurrentLocation.Y));
+				RightTile->SetMoveType(EMoveType::MOVE);
+				SearchMovePaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X + 1, CurrentLocation.Y));
 			}
 		}
-		if (CurrentLocation.Y - 1 >= 0)
+		if (CurrentLocation.Y - 1 >= 0 && Field.Find(FVector2D(CurrentLocation.X, CurrentLocation.Y - 1)))
 		{
 			ATile* UpperTile = Field[FVector2D(CurrentLocation.X, CurrentLocation.Y - 1)];
 			if (UpperTile->GetTileStatus() == ETileStatus::FREE)
 			{
-				UpperTile->SetMoveType("Move");
-				SearchPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X, CurrentLocation.Y - 1));
-			}
-			else if (UpperTile->GetTileStatus() == ETileStatus::OCCUPIED && GamemodeBase->Players[GamemodeBase->GetNextPlayer(GamemodeBase->CurrentPlayer)]->GetTroops().Contains(UpperTile->GetTroop()))
-			{
-				UpperTile->SetMoveType("Attack");
-				SearchPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X, CurrentLocation.Y - 1));
+				UpperTile->SetMoveType(EMoveType::MOVE);
+				SearchMovePaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X, CurrentLocation.Y - 1));
 			}
 		}
-		if (CurrentLocation.Y + 1 < FieldSize)
+		if (CurrentLocation.Y + 1 < FieldSize && Field.Find(FVector2D(CurrentLocation.X, CurrentLocation.Y + 1)))
 		{
 			ATile* LowerTile = Field[FVector2D(CurrentLocation.X, CurrentLocation.Y + 1)];
 			if (LowerTile->GetTileStatus() == ETileStatus::FREE)
 			{
-				LowerTile->SetMoveType("Move");
-				SearchPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X, CurrentLocation.Y + 1));
-			}
-			else if (LowerTile->GetTileStatus() == ETileStatus::OCCUPIED && GamemodeBase->Players[GamemodeBase->GetNextPlayer(GamemodeBase->CurrentPlayer)]->GetTroops().Contains(LowerTile->GetTroop()))
-			{
-				LowerTile->SetMoveType("Attack");
-				SearchPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X, CurrentLocation.Y + 1));
+				LowerTile->SetMoveType(EMoveType::MOVE);
+				SearchMovePaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X, CurrentLocation.Y + 1));
 			}
 		}
 	}
-	if (Field[CurrentLocation]->GetTroop() == &Troop)
+}
+
+void AGameField::SearchAttackPaths(int32 StepNumber, ATroop& Troop, FVector2D CurrentLocation)
+{
+	if (StepNumber < Troop.GetAttackRange())
 	{
-		Field[CurrentLocation]->SetMoveType("CurrentPosition");
-		UE_LOG(LogTemp, Log, TEXT("Blue"));
+		AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
+		if (CurrentLocation.X - 1 >= 0 && Field.Find(FVector2D(CurrentLocation.X - 1, CurrentLocation.Y)))
+		{
+			ATile* LeftTile = Field[FVector2D(CurrentLocation.X - 1, CurrentLocation.Y)];
+			if (LeftTile->GetTileStatus() == ETileStatus::OCCUPIED && GamemodeBase->Players[GamemodeBase->GetNextPlayer(GamemodeBase->CurrentPlayer)]->GetTroops().Contains(LeftTile->GetTroop()))
+			{
+				LeftTile->SetMoveType(EMoveType::ATTACK);
+				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X - 1, CurrentLocation.Y));
+			}
+			else
+			{
+				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X - 1, CurrentLocation.Y));
+			}
+		}
+		if (CurrentLocation.X + 1 < FieldSize && Field.Find(FVector2D(CurrentLocation.X + 1, CurrentLocation.Y)))
+		{
+			ATile* RightTile = Field[FVector2D(CurrentLocation.X + 1, CurrentLocation.Y)];
+			if (RightTile->GetTileStatus() == ETileStatus::OCCUPIED && GamemodeBase->Players[GamemodeBase->GetNextPlayer(GamemodeBase->CurrentPlayer)]->GetTroops().Contains(RightTile->GetTroop()))
+			{
+				RightTile->SetMoveType(EMoveType::ATTACK);
+				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X + 1, CurrentLocation.Y));
+			}
+			else
+			{
+				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X + 1, CurrentLocation.Y));
+			}
+		}
+		if (CurrentLocation.Y - 1 >= 0 && Field.Find(FVector2D(CurrentLocation.X, CurrentLocation.Y - 1)))
+		{
+			ATile* UpperTile = Field[FVector2D(CurrentLocation.X, CurrentLocation.Y - 1)];
+			if (UpperTile->GetTileStatus() == ETileStatus::OCCUPIED && GamemodeBase->Players[GamemodeBase->GetNextPlayer(GamemodeBase->CurrentPlayer)]->GetTroops().Contains(UpperTile->GetTroop()))
+			{
+				UpperTile->SetMoveType(EMoveType::ATTACK);
+				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X, CurrentLocation.Y - 1));
+			}
+			else
+			{
+				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X, CurrentLocation.Y - 1));
+			}
+		}
+		if (CurrentLocation.Y + 1 < FieldSize && Field.Find(FVector2D(CurrentLocation.X, CurrentLocation.Y + 1)))
+		{
+			ATile* LowerTile = Field[FVector2D(CurrentLocation.X, CurrentLocation.Y + 1)];
+			if (LowerTile->GetTileStatus() == ETileStatus::OCCUPIED && GamemodeBase->Players[GamemodeBase->GetNextPlayer(GamemodeBase->CurrentPlayer)]->GetTroops().Contains(LowerTile->GetTroop()))
+			{
+				LowerTile->SetMoveType(EMoveType::ATTACK);
+				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X, CurrentLocation.Y + 1));
+			}
+			else if (Troop.GetAttackType() == EAttackType::RANGED)
+			{
+				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X, CurrentLocation.Y + 1));
+			}
+		}
 	}
 }
 
 void AGameField::ResetTilesMoveType()
 {
+	AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
 	for (int32 I = 0; I < FieldSize; I++)
 	{
 		for (int32 J = 0; J < FieldSize; J++)
 		{
-			Field[FVector2D(I, J)]->SetMoveType("None");
+			Field[FVector2D(I, J)]->SetMoveType(EMoveType::NONE); 
 		}
 	}
+}
+
+void AGameField::DrawPath(TArray<pair<int32, int32>>& Path)
+{
+	AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
+	for (int32 I = 0; I < Path.Num(); I++)
+	{
+		FVector2D TileLocation = FVector2D(Path[I].first, Path[I].second);
+		Field[TileLocation]->SetPath(true);
+		Field[TileLocation]->SetPathTurn(GamemodeBase->CurrentTurn);
+	}
+	SetTilesMaterial();
+}
+
+void AGameField::FilterAttackTiles()
+{
+	AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
+	for (int32 I = 0; I < FieldSize; I++)
+	{
+		for (int32 J = 0; J < FieldSize; J++)
+		{
+			if (Field[FVector2D(I, J)]->GetMoveType() != EMoveType::ATTACK)
+			{
+				Field[FVector2D(I, J)]->SetMoveType(EMoveType::NONE);
+			}
+		}
+	}
+}
+
+bool AGameField::IsValidPosition(int32 Col, int32 Row)
+{
+	return Row >= 0 && Row < FieldSize && Col >= 0 && Col < FieldSize;
+}
+
+bool AGameField::IsValidMovePosition(int32 Col, int32 Row)
+{
+	return IsValidPosition(Col, Row) && Field[FVector2D(Col, Row)]->GetMoveType() == EMoveType::MOVE;
+}
+
+bool AGameField::IsDestination(int32 Col, int32 Row, pair<int32, int32> Dest)
+{
+	return Col == Dest.first && Row == Dest.second;
+}
+
+void AGameField::InitialiseNodeMap(TMap<FVector2D, FNode*>& NodeMap, pair<int32, int32> Src)
+{
+	for (int32 Row = 0; Row < FieldSize; Row++)
+	{
+		for (int32 Col = 0; Col < FieldSize; Col++)
+		{
+			NodeMap.Add(FVector2D(Col, Row), new FNode());
+			if (NodeMap[FVector2D(Col, Row)] == nullptr)
+			{
+				UE_LOG(LogTemp, Error, TEXT("Non ha creato il nodo"));
+				return;
+			}
+		}
+	}
+	FVector2D SrcLocation = FVector2D(Src.first, Src.second);
+	if (NodeMap.Contains(SrcLocation))
+	{
+		NodeMap[SrcLocation]->ParentCol = Src.first;
+		NodeMap[SrcLocation]->ParentRow = Src.second;
+		NodeMap[SrcLocation]->F = 0;
+		NodeMap[SrcLocation]->G = 0;
+		NodeMap[SrcLocation]->H = 0;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Non esiste il nodo Src"));
+		return;
+	}
+}
+
+
+
+void AGameField::InitialiseClosedSet(TMap<FVector2D, bool>& ClosedSet)
+{
+	for (int32 Row = 0; Row < FieldSize; Row++)
+	{
+		for (int32 Col = 0; Col < FieldSize; Col++)
+		{
+			ClosedSet.Add(FVector2D(Col, Row), false);
+		}
+	}
+}
+
+bool AGameField::IsBlockingEntity(int32 Col, int32 Row)
+{
+	return Field[FVector2D(Col, Row)]->GetTileStatus() != ETileStatus::FREE;
+}
+
+void AGameField::AStar(pair<int32, int32> Src, pair<int32, int32> Dest, TArray<pair<int32, int32>>& Path)
+{
+	if (!IsValidPosition(Src.first, Src.second))
+	{
+		UE_LOG(LogTemp, Error, TEXT("La sorgente è esterna al campo"));
+		return;
+	}
+
+	if (!IsValidPosition(Dest.first, Dest.second))
+	{
+		UE_LOG(LogTemp, Error, TEXT("La destinazione è esterna al campo"));
+		return;
+	}
+
+	TMap<FVector2D, FNode*> NodeMap;
+
+	InitialiseNodeMap(NodeMap, Src);
+	
+	TMap<FVector2D, bool> ClosedSet;
+
+	InitialiseClosedSet(ClosedSet);
+	
+	if (IsBlockingEntity(Dest.first, Dest.second))
+	{
+		UE_LOG(LogTemp, Error, TEXT("La destinazione non è una cella libera"));
+		return;
+	}
+
+	TArray<pair<int32, pair<int32, int32>>> OpenSet;
+
+	OpenSet.Add(make_pair(0.0, make_pair(Src.first, Src.second)));
+
+	bool bFoundDestination = false;
+
+	while (OpenSet.Num() > 0)
+	{
+		pair<double, pair<int32, int32>> HeadNode = OpenSet[0];
+		OpenSet.RemoveAt(0);
+
+		int32 CurrentCol = HeadNode.second.first;
+		int32 CurrentRow = HeadNode.second.second;
+		ClosedSet[FVector2D(CurrentCol, CurrentRow)] = true;
+
+		double SuccessorG, SuccessorH, SuccessorF;
+
+		//Primo successore (Sopra)
+		if (IsValidMovePosition(CurrentCol - 1, CurrentRow))
+		{
+			if (IsDestination(CurrentCol - 1, CurrentRow, Dest))
+			{
+				NodeMap[FVector2D(CurrentCol - 1, CurrentRow)]->ParentRow = CurrentRow;
+				NodeMap[FVector2D(CurrentCol - 1, CurrentRow)]->ParentCol = CurrentCol;
+				GetShortestPath(NodeMap, Dest, Path);
+				bFoundDestination = true;
+				return;
+			}
+			else if (ClosedSet[FVector2D(CurrentCol - 1, CurrentRow)] == false && !IsBlockingEntity(CurrentCol - 1, CurrentRow))
+			{
+				SuccessorG = NodeMap[FVector2D(CurrentCol, CurrentRow)]->G + 1.f;
+				SuccessorH = GetManhattanDistance(CurrentCol - 1, CurrentRow, Dest);
+				SuccessorF = SuccessorG + SuccessorH;
+
+				if (NodeMap[FVector2D(CurrentCol - 1, CurrentRow)]->F == FLT_MAX || NodeMap[FVector2D(CurrentCol - 1, CurrentRow)]->F > SuccessorF)
+				{
+					OpenSet.Add(make_pair(SuccessorF, make_pair(CurrentCol - 1, CurrentRow)));
+					OpenSet.Sort([](const auto& A, const auto& B) { return A.first < B.first; });
+
+					NodeMap[FVector2D(CurrentCol - 1, CurrentRow)]->H = SuccessorH;
+					NodeMap[FVector2D(CurrentCol - 1, CurrentRow)]->G = SuccessorG;
+					NodeMap[FVector2D(CurrentCol - 1, CurrentRow)]->F = SuccessorF;
+					NodeMap[FVector2D(CurrentCol - 1, CurrentRow)]->ParentRow = CurrentRow;
+					NodeMap[FVector2D(CurrentCol - 1, CurrentRow)]->ParentCol = CurrentCol;
+				}
+			}
+		}
+
+		//Secondo successore (Sotto)
+		if (IsValidMovePosition(CurrentCol + 1, CurrentRow))
+		{
+			if (IsDestination(CurrentCol + 1, CurrentRow, Dest))
+			{
+				NodeMap[FVector2D(CurrentCol + 1, CurrentRow)]->ParentRow = CurrentRow;
+				NodeMap[FVector2D(CurrentCol + 1, CurrentRow)]->ParentCol = CurrentCol;
+				GetShortestPath(NodeMap, Dest, Path);
+				bFoundDestination = true;
+				return;
+			}
+			else if (ClosedSet[FVector2D(CurrentCol + 1, CurrentRow)] == false && !IsBlockingEntity(CurrentCol + 1, CurrentRow))
+			{
+				SuccessorG = NodeMap[FVector2D(CurrentCol, CurrentRow)]->G + 1.f;
+				SuccessorH = GetManhattanDistance(CurrentCol + 1, CurrentRow, Dest);
+				SuccessorF = SuccessorG + SuccessorH;
+
+				if (NodeMap[FVector2D(CurrentCol + 1, CurrentRow)]->F == FLT_MAX || NodeMap[FVector2D(CurrentCol + 1, CurrentRow)]->F > SuccessorF)
+				{
+					OpenSet.Add(make_pair(SuccessorF, make_pair(CurrentCol + 1, CurrentRow)));
+					OpenSet.Sort([](const auto& A, const auto& B) { return A.first < B.first; });
+
+					NodeMap[FVector2D(CurrentCol + 1, CurrentRow)]->H = SuccessorH;
+					NodeMap[FVector2D(CurrentCol + 1, CurrentRow)]->G = SuccessorG;
+					NodeMap[FVector2D(CurrentCol + 1, CurrentRow)]->F = SuccessorF;
+					NodeMap[FVector2D(CurrentCol + 1, CurrentRow)]->ParentRow = CurrentRow;
+					NodeMap[FVector2D(CurrentCol + 1, CurrentRow)]->ParentCol = CurrentCol; 
+				}
+			}
+		}
+
+		//Terzo successore (Sinistra)
+		if (IsValidMovePosition(CurrentCol, CurrentRow - 1))
+		{
+			if (IsDestination(CurrentCol, CurrentRow - 1, Dest))
+			{
+				NodeMap[FVector2D(CurrentCol, CurrentRow - 1)]->ParentRow = CurrentRow;
+				NodeMap[FVector2D(CurrentCol, CurrentRow - 1)]->ParentCol = CurrentCol;
+				GetShortestPath(NodeMap, Dest, Path);
+				bFoundDestination = true;
+				return;
+			}
+			else if (ClosedSet[FVector2D(CurrentCol, CurrentRow - 1)] == false && !IsBlockingEntity(CurrentCol, CurrentRow - 1))
+			{
+				SuccessorG = NodeMap[FVector2D(CurrentCol, CurrentRow)]->G + 1.f;
+				SuccessorH = GetManhattanDistance(CurrentCol, CurrentRow - 1, Dest);
+				SuccessorF = SuccessorG + SuccessorH;
+
+				if (NodeMap[FVector2D(CurrentCol, CurrentRow - 1)]->F == FLT_MAX || NodeMap[FVector2D(CurrentCol, CurrentRow - 1)]->F > SuccessorF)
+				{
+					OpenSet.Add(make_pair(SuccessorF, make_pair(CurrentCol, CurrentRow - 1)));
+					OpenSet.Sort([](const auto& A, const auto& B) { return A.first < B.first; });
+
+					NodeMap[FVector2D(CurrentCol, CurrentRow - 1)]->H = SuccessorH;
+					NodeMap[FVector2D(CurrentCol, CurrentRow - 1)]->G = SuccessorG;
+					NodeMap[FVector2D(CurrentCol, CurrentRow - 1)]->F = SuccessorF;
+					NodeMap[FVector2D(CurrentCol, CurrentRow - 1)]->ParentRow = CurrentRow;
+					NodeMap[FVector2D(CurrentCol, CurrentRow - 1)]->ParentCol = CurrentCol;
+				}
+			}
+		}
+
+		//Quarto successore (Destra)
+		if (IsValidMovePosition(CurrentCol, CurrentRow + 1))
+		{
+			if (IsDestination(CurrentCol, CurrentRow + 1, Dest))
+			{
+				NodeMap[FVector2D(CurrentCol, CurrentRow + 1)]->ParentRow = CurrentRow;
+				NodeMap[FVector2D(CurrentCol, CurrentRow + 1)]->ParentCol = CurrentCol;
+				GetShortestPath(NodeMap, Dest, Path);
+				bFoundDestination = true;
+				return;
+			}
+			else if (ClosedSet[FVector2D(CurrentCol, CurrentRow + 1)] == false && !IsBlockingEntity(CurrentCol, CurrentRow + 1))
+			{
+				SuccessorG = NodeMap[FVector2D(CurrentCol, CurrentRow)]->G + 1.f;
+				SuccessorH = GetManhattanDistance(CurrentCol, CurrentRow + 1, Dest);
+				SuccessorF = SuccessorG + SuccessorH;
+
+				if (NodeMap[FVector2D(CurrentCol, CurrentRow + 1)]->F == FLT_MAX || NodeMap[FVector2D(CurrentCol, CurrentRow + 1)]->F > SuccessorF)
+				{
+					OpenSet.Add(make_pair(SuccessorF, make_pair(CurrentCol, CurrentRow + 1)));
+					OpenSet.Sort([](const auto& A, const auto& B) { return A.first < B.first; }); 
+
+					NodeMap[FVector2D(CurrentCol, CurrentRow + 1)]->H = SuccessorH;
+					NodeMap[FVector2D(CurrentCol, CurrentRow + 1)]->G = SuccessorG;
+					NodeMap[FVector2D(CurrentCol, CurrentRow + 1)]->F = SuccessorF;
+					NodeMap[FVector2D(CurrentCol, CurrentRow + 1)]->ParentRow = CurrentRow;
+					NodeMap[FVector2D(CurrentCol, CurrentRow + 1)]->ParentCol = CurrentCol; 
+				}
+			}
+		}
+	}
+}
+
+void AGameField::GetShortestPath(TMap<FVector2D, FNode*>& NodeMap, pair<int32, int32> Dest, TArray<pair<int32, int32>>& Path)
+{
+	int32 Col = Dest.first;
+	int32 Row = Dest.second;
+
+	// Controlla che il nodo di destinazione esista nella mappa
+	if (!NodeMap.Contains(FVector2D(Col, Row)))
+	{
+		return;
+	}
+
+	while (!(NodeMap[FVector2D(Col, Row)]->ParentRow == Row && NodeMap[FVector2D(Col, Row)]->ParentCol == Col))
+	{
+		Path.Add(make_pair(Col, Row));
+
+		int32 PrevRow = Row;
+		int32 PrevCol = Col;
+		Row = NodeMap[FVector2D(PrevCol, PrevRow)]->ParentRow;
+		Col = NodeMap[FVector2D(PrevCol, PrevRow)]->ParentCol;
+	}
+
+	// Aggiungi l'ultimo nodo di partenza
+	Path.Add(make_pair(Col, Row));
 }
 
 int32 AGameField::GetTileSize()
@@ -276,6 +600,11 @@ FVector AGameField::GetRelativeLocationByXY(int32 X, int32 Y)
 FVector2D AGameField::GetPosition(const FHitResult& Hit)
 {
 	return Cast<ATile>(Hit.GetActor())->GetGridLocation();
+}
+
+double AGameField::GetManhattanDistance(int32 Row, int32 Col, pair<int32, int32> Dest)
+{
+	return FMath::Abs(Dest.first - Row) + FMath::Abs(Dest.second - Col);
 }
 
 void AGameField::BeginPlay()

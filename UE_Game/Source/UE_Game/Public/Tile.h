@@ -13,6 +13,14 @@ enum class ETileStatus : uint8
 	OBSTACLE    UMETA(DisplayName = "OBSTACLE")
 };
 
+UENUM()
+enum class EMoveType : uint8
+{
+	NONE		UMETA(DisplayName = "NONE"),
+	MOVE		UMETA(DisplayName = "MOVE"),
+	ATTACK		UMETA(DisplayName = "ATTACK")
+};
+
 UCLASS()
 class UE_GAME_API ATile : public AActor
 {
@@ -25,9 +33,13 @@ public:
 
 	void SetGridLocation(int32 X, int32 Y);
 
-	void SetTroop(ATroop& Troop);
+	void SetTroop(ATroop* Troop);
 
-	void SetMoveType(FString NewMoveType);
+	void SetMoveType(EMoveType NewMoveType);
+
+	void SetPath(bool Value);
+
+	void SetPathTurn(int32 NewPathTurn);
 
 	ETileStatus GetTileStatus();
 
@@ -35,7 +47,11 @@ public:
 
 	ATroop* GetTroop();
 
-	FString GetMoveType();
+	EMoveType GetMoveType();
+
+	bool IsPath();
+
+	int32 GetPathTurn();
 
 	void SetTilesMaterial();
 
@@ -51,11 +67,14 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* ImageStaticMesh;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UStaticMeshComponent* PathStaticMesh;
+
 	UPROPERTY(EditAnywhere, Category = "Material")
 	UMaterialInterface* FloorMaterial;
 
 	UPROPERTY(EditAnywhere, Category = "Material")
-	UMaterialInterface* MountainMaterial;
+	UMaterialInterface* ObstacleMaterial;
 
 	UPROPERTY(EditAnywhere, Category = "Material")
 	UMaterialInterface* MoveMaterial;
@@ -64,7 +83,7 @@ protected:
 	UMaterialInterface* AttackMaterial;
 
 	UPROPERTY(EditAnywhere, Category = "Material")
-	UMaterialInterface* CurrentPositionMaterial;
+	UMaterialInterface* PathMaterial;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Info")
 	ETileStatus Status;
@@ -76,5 +95,11 @@ protected:
 	ATroop* Troop;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Info")
-	FString MoveType;
+	EMoveType MoveType;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Info")
+	bool bPath;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Info")
+	int32 PathTurn;
 };

@@ -1,4 +1,5 @@
 #include "Tile.h"
+#include "UEG_GamemodeBase.h"
 
 ATile::ATile()
 {
@@ -6,22 +7,26 @@ ATile::ATile()
 
 	Scene = CreateDefaultSubobject<USceneComponent>(TEXT("Scene"));
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
-	ImageStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ImageStaticMesh"));
+	ImageStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ImageStaticMesh")); 
+	PathStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PathStaticMesh"));
 
 	SetRootComponent(Scene);
 	StaticMesh->SetupAttachment(Scene);
 	ImageStaticMesh->SetupAttachment(Scene);
+	PathStaticMesh->SetupAttachment(Scene);
 
 	FloorMaterial = CreateDefaultSubobject<UMaterialInterface>(TEXT("Material"));
-	MountainMaterial = CreateDefaultSubobject<UMaterialInterface>(TEXT("Material"));
+	ObstacleMaterial = CreateDefaultSubobject<UMaterialInterface>(TEXT("Material"));
 	MoveMaterial = CreateDefaultSubobject<UMaterialInterface>(TEXT("Material"));
 	AttackMaterial = CreateDefaultSubobject<UMaterialInterface>(TEXT("Material")); 
-	CurrentPositionMaterial = CreateDefaultSubobject<UMaterialInterface>(TEXT("Material"));
+	PathMaterial = CreateDefaultSubobject<UMaterialInterface>(TEXT("Material"));
 
 	Status = ETileStatus::FREE;
 	GridLocation = FVector2D(0, 0);
 	Troop = nullptr;
-	MoveType = "None";
+	MoveType = EMoveType::NONE; 
+	bPath = false;
+	PathTurn = -1;
 }
 
 void ATile::SetTileStatus(ETileStatus NewStatus)
@@ -34,21 +39,24 @@ void ATile::SetGridLocation(int32 X, int32 Y)
 	GridLocation = FVector2D(X, Y);
 }
 
-void ATile::SetTroop(ATroop& NewTroop)
+void ATile::SetTroop(ATroop* NewTroop)
 {
-	Troop = &NewTroop;
+	Troop = NewTroop;
 }
 
-void ATile::SetMoveType(FString NewMoveType)
+void ATile::SetMoveType(EMoveType NewMoveType)
 {
-	if (NewMoveType == "None" || NewMoveType == "Move" || NewMoveType == "Attack" || NewMoveType == "CurrentPosition")
-	{
-		MoveType = NewMoveType;
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("Invalid Move Type"));
-	}
+	MoveType = NewMoveType;
+}
+
+void ATile::SetPath(bool Value)
+{
+	bPath = Value;
+}
+
+void ATile::SetPathTurn(int32 NewPathTurn)
+{
+	PathTurn = NewPathTurn;
 }
 
 ETileStatus ATile::GetTileStatus()
@@ -66,32 +74,47 @@ ATroop* ATile::GetTroop()
 	return Troop;
 }
 
-FString ATile::GetMoveType()
+EMoveType ATile::GetMoveType()
 {
 	return MoveType;
 }
 
+bool ATile::IsPath()
+{
+	return bPath;
+}
+
+int32 ATile::GetPathTurn()
+{
+	return PathTurn;
+}
+
 void ATile::SetTilesMaterial()
 {
-	if (MoveType == "None" && Status != ETileStatus::OBSTACLE)
+	AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
+	if (MoveType == EMoveType::NONE && Status != ETileStatus::OBSTACLE)
 	{
 		ImageStaticMesh->SetMaterial(0, FloorMaterial);
 	}
-	else if (MoveType == "None" && Status == ETileStatus::OBSTACLE)
+	else if (MoveType == EMoveType::NONE && Status == ETileStatus::OBSTACLE)
 	{
-		ImageStaticMesh->SetMaterial(0, MountainMaterial);
+		ImageStaticMesh->SetMaterial(0, ObstacleMaterial);
 	}
-	else if (MoveType == "Move")
+	else if (MoveType == EMoveType::MOVE)
 	{
 		ImageStaticMesh->SetMaterial(0, MoveMaterial);
 	}
-	else if (MoveType == "Attack")
+	else if (MoveType == EMoveType::ATTACK)
 	{
 		ImageStaticMesh->SetMaterial(0, AttackMaterial);
 	}
-	else if (MoveType == "CurrentPosition")
+	if (bPath && PathTurn < GamemodeBase->CurrentTurn + 1)
 	{
-		ImageStaticMesh->SetMaterial(0, CurrentPositionMaterial);
+		PathStaticMesh->SetVisibility(true);
+	}
+	else
+	{
+		PathStaticMesh->SetVisibility(false);
 	}
 }
 
@@ -99,6 +122,9 @@ void ATile::SetTilesMaterial()
 void ATile::BeginPlay()
 {
 	Super::BeginPlay();
+
+	PathStaticMesh->SetMaterial(0, PathMaterial);
+	PathStaticMesh->SetVisibility(false);
 }
 
 
