@@ -1,10 +1,13 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "UEG_GamemodeBase.h"
+#include "UEG_HUD.h"
+#include "UEG_GameInstance.h"
 #include "RandomPlayer.h"
 #include "UEG_PlayerController.h"
 #include "HumanPlayer.h"
 #include "EngineUtils.h"
+#include <Kismet/GameplayStatics.h>
 
 AUEG_GamemodeBase::AUEG_GamemodeBase()
 {
@@ -21,6 +24,13 @@ AUEG_GamemodeBase::AUEG_GamemodeBase()
 	CurrentTurn = 0;
 }
 
+void AUEG_GamemodeBase::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	GameInstance = Cast<UUEG_GameInstance>(UGameplayStatics::GetGameInstance(GetWorld()));
+}
+
 int32 AUEG_GamemodeBase::GetFieldSize()
 {
 	return FieldSize;
@@ -34,6 +44,8 @@ AGameField* AUEG_GamemodeBase::GetGameField()
 void AUEG_GamemodeBase::BeginPlay()
 {
 	Super::BeginPlay();
+
+	OnReset.AddDynamic(this, &AUEG_GamemodeBase::ResetGamemodeBase);
 
 	ArchersNumber = 1;
 	KnightsNumber = 1;
@@ -57,10 +69,11 @@ void AUEG_GamemodeBase::BeginPlay()
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("Game Field is null"));
+		return;
 	}
 
 	float CameraPosX = (GField->GetTileSize() * FieldSize - GField->GetTileSize()) / 2;
-	float Zposition = (GField->GetTileSize() * FieldSize - GField->GetTileSize()) / 2 + GField->GetTileSize() * 1.5f;
+	float Zposition = (GField->GetTileSize() * FieldSize * 0.6);
 	FVector CameraPos(CameraPosX, CameraPosX, Zposition);
 	HumanPlayer->SetActorLocationAndRotation(CameraPos, FRotator(-90, -90, 0));
 
@@ -69,20 +82,53 @@ void AUEG_GamemodeBase::BeginPlay()
 
 	Players.Add(HumanPlayer);
 	Players.Add(AI);
-	this->ChoosePlayerAndStartGame();
+
+	ChoosePlayerAndStartGame();
 }
 
 void AUEG_GamemodeBase::ChoosePlayerAndStartGame()
 {
-	CurrentPlayer = 0;
-	//CurrentPlayer = FMath::RandRange(0, Players.Num() - 1);
+	GameInstance->SetMessage(TEXT("Sorteggio..."));
 
-	for (int32 IndexI = 0; IndexI < Players.Num(); IndexI++)
-	{
-		Players[IndexI]->PlayerNumber = IndexI;
-	}
+	FTimerHandle TimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle, [&]()
+		{
+			AUEG_PlayerController* PlayerController = Cast<AUEG_PlayerController>(GetWorld()->GetFirstPlayerController());
+			if (PlayerController)
+			{
+				AUEG_HUD* HUD = Cast<AUEG_HUD>(PlayerController->GetHUD());
+				if (HUD)
+				{
+					UMyUserWidget* UserWidget = HUD->GetHUDWidget();
+					if (UserWidget)
+					{
+						CurrentPlayer = FMath::RandRange(0, Players.Num() - 1);
 
-	Players[CurrentPlayer]->OnTurn();
+						for (int32 IndexI = 0; IndexI < Players.Num(); IndexI++)
+						{
+							Players[IndexI]->PlayerNumber = IndexI;
+						}
+
+						Players[CurrentPlayer]->OnTurn();
+					}
+					else
+					{
+						UE_LOG(LogTemp, Warning, TEXT("Non esiste UserWidget"));
+						return;
+					}
+				}
+				else
+				{
+					UE_LOG(LogTemp, Warning, TEXT("Non esiste HUD"));
+					return;
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Non esiste PlayerController"));
+				return;
+			}
+		}, 3, false);
 }
 
 void AUEG_GamemodeBase::PlaceTroop(const int32 PlayerNumber, FVector& SpawnLocation)
@@ -101,12 +147,7 @@ void AUEG_GamemodeBase::PlaceTroop(const int32 PlayerNumber, FVector& SpawnLocat
 		}
 		if (Troop != nullptr)
 		{
-			Troop->SetMovement(3);
-			Troop->SetAttackType(EAttackType::RANGED);
-			Troop->SetAttackRange(10);
-			Troop->SetMinAttackDamage(4);
-			Troop->SetMaxAttackDamage(8);
-			Troop->SetHealth(20);
+			Troop->SetAsArcher();
 
 			Players[PlayerNumber]->GetTroops().Add(Troop);
 			Players[PlayerNumber]->UpdatePlacedArchers();
@@ -142,12 +183,7 @@ void AUEG_GamemodeBase::PlaceTroop(const int32 PlayerNumber, FVector& SpawnLocat
 		}
 		if (Troop != nullptr)
 		{
-			Troop->SetMovement(6);
-			Troop->SetAttackType(EAttackType::MELEE);
-			Troop->SetAttackRange(1);
-			Troop->SetMinAttackDamage(1);
-			Troop->SetMaxAttackDamage(6);
-			Troop->SetHealth(40);
+			Troop->SetAsKnight();
 
 			Players[PlayerNumber]->GetTroops().Add(Troop);
 			Players[PlayerNumber]->UpdatePlacedKnights();
@@ -192,5 +228,79 @@ void AUEG_GamemodeBase::TurnNextPlayer()
 	CurrentPlayer = GetNextPlayer(CurrentPlayer);
 	Players[CurrentPlayer]->OnTurn();
 	CurrentTurn++;
+	GameInstance->OnTurnChange.Broadcast();
+}
+
+bool AUEG_GamemodeBase::IsWinCondition()
+{
+	//Array che segna chi perde (può finire in pareggio la partita se una truppa uccide l'avversaria ma muore per il contraccolpo)
+	TArray<bool> IsLoser;
+	IsLoser.Init(true, Players.Num());
+
+	//Scorro i giocatori
+	for (IPlayerInterface* Player : Players)
+	{
+		//Scorro le truppe del giocatore Player
+		for (ATroop* Troop : Player->GetTroops())
+		{
+			//Se ha almeno una truppa in vita non è perdente
+			if (Troop->GetHealth() > 0)
+			{
+				IsLoser[Player->PlayerNumber] = false;
+				break;
+			}
+		}
+	}
+
+	//Contatore dei perdenti
+	int32 LosersCounter = 0;
+	//Scorro per contare i perdenti
+	for (int32 I = 0; I < IsLoser.Num(); I++)
+	{
+		if (IsLoser[I] == true)
+		{
+			LosersCounter++;
+		}
+	}
+
+	//Se è un pareggio
+	if (LosersCounter == IsLoser.Num())
+	{
+		IsGameStarted = false;
+		IsGameOver = true;
+		GameInstance->SetMessage(TEXT("Nessun vincitore: Pareggio!"));
+	}
+	//Se c'è uno sconfitto (e quindi un vincitore)
+	else if (LosersCounter == 1)
+	{
+		IsGameStarted = false;
+		IsGameOver = true;
+		for (int32 I = 0; I < Players.Num(); I++)
+		{
+			if (IsLoser[I] == true)
+			{
+				Players[I]->OnLose();
+			}
+			else
+			{
+				Players[I]->OnWin();
+			}
+		}
+	}
+	//Se non ci sono perdenti
+	else if (LosersCounter == 0)
+	{
+		return false;
+	}
+	return true;
+}
+
+void AUEG_GamemodeBase::ResetGamemodeBase()
+{
+	CurrentTurn = 0;
+	bArcherPlacingTurn = true;
+	bKnightPlacingTurn = false;
+	IsGameStarted = false;
+	IsGameOver = false;
 }
 

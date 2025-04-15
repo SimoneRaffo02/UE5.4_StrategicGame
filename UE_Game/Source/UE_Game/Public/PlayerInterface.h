@@ -2,7 +2,9 @@
 
 #pragma once
 
+#include "UEG_GameInstance.h"
 #include "Troop.h"
+#include "Tile.h"
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
 #include "PlayerInterface.generated.h"
@@ -23,6 +25,8 @@ class UE_GAME_API IPlayerInterface
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
+	IPlayerInterface();
+
 	int32 PlayerNumber;
 
 	int32 PlacedArchers = 0;
@@ -41,7 +45,20 @@ public:
 
 	void UpdatePlacedKnights();
 
-	void ResetPlacedTroops();
-
 	virtual void OnTurn() {};
+
+	virtual void OnWin() {};
+
+	virtual void OnLose() {};
+
+	virtual void Attack(ATroop& PlayerTroop, ATroop& EnemyTroop) {};
+
+	virtual void Move(ATroop* Troop, ATile* Tile) {};
+
+	virtual void EndTurn() {};
+
+	UFUNCTION()
+	virtual void ResetPlayer();
+
+protected:
 };

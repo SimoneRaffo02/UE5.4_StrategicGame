@@ -16,11 +16,31 @@ public:
 	// Sets default values for this pawn's properties
 	ARandomPlayer();
 
+	bool TroopsCanMove();
+
+	bool TroopsCanAttack();
+
 	virtual void OnTurn() override;
+
+	virtual void OnWin() override;
+
+	virtual void OnLose() override;
+
+	virtual void Attack(ATroop& PlayerTroop, ATroop& EnemyTroop) override;
+
+	virtual void Move(ATroop* Troop, ATile* Tile) override;
+
+	virtual void EndTurn() override;
+
+	UFUNCTION()
+	virtual void ResetPlayer() override;
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UUEG_GameInstance* GameInstance;
 
 public:	
 	// Called every frame

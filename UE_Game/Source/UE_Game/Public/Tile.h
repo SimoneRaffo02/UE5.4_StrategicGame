@@ -55,6 +55,9 @@ public:
 
 	void SetTilesMaterial();
 
+	UFUNCTION()
+	void ResetTile();
+
 protected:
 	virtual void BeginPlay() override;
 

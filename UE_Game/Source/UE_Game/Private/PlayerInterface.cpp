@@ -5,6 +5,10 @@
 
 // Add default functionality here for any IPlayerInterface functions that are not pure virtual.
 
+IPlayerInterface::IPlayerInterface()
+{
+}
+
 int32 IPlayerInterface::GetPlacedArchers()
 {
 	return PlacedArchers;
@@ -30,8 +34,9 @@ void IPlayerInterface::UpdatePlacedKnights()
 	PlacedKnights++;
 }
 
-void IPlayerInterface::ResetPlacedTroops()
+void IPlayerInterface::ResetPlayer()
 {
 	PlacedArchers = 0;
 	PlacedKnights = 0;
+	Troops.Empty();
 }

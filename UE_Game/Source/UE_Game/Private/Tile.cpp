@@ -108,14 +108,24 @@ void ATile::SetTilesMaterial()
 	{
 		ImageStaticMesh->SetMaterial(0, AttackMaterial);
 	}
-	if (bPath && PathTurn < GamemodeBase->CurrentTurn + 1)
+	if (bPath && PathTurn >= GamemodeBase->CurrentTurn - 1)
 	{
 		PathStaticMesh->SetVisibility(true);
 	}
 	else
 	{
 		PathStaticMesh->SetVisibility(false);
+		bPath = false;
 	}
+}
+
+void ATile::ResetTile()
+{
+	Status = ETileStatus::FREE;
+	MoveType = EMoveType::NONE;
+	bPath = false;
+	PathTurn = -1;
+	Troop = nullptr;
 }
 
 // Called when the game starts or when spawned

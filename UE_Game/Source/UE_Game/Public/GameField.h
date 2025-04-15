@@ -46,6 +46,8 @@ public:
 
 	void GenerateObstacles();
 
+	void RefreshGameField();
+
 	void SetFieldSize(int32 NewFieldSize);
 
 	void SetObstaclesPercentage(float NewObstaclesPercentage);
@@ -94,9 +96,14 @@ public:
 
 	FVector GetRelativeLocationByXY(int32 X, int32 Y);
 
-	FVector2D GetPosition(const FHitResult& Hit);
+	FString GetTileName(ATile* Tile);
+
+	int32 GetFieldSize();
 
 	double GetManhattanDistance(int32 Row, int32 Col, pair<int32, int32> Dest);
+
+	UFUNCTION()
+	void ResetGameField();
 
 protected:
 	virtual void BeginPlay() override;

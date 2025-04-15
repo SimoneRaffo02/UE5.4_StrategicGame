@@ -19,6 +19,19 @@ public:
 
 	virtual void OnTurn() override;
 
+	virtual void OnWin() override;
+
+	virtual void OnLose() override;
+
+	virtual void Attack(ATroop& PlayerTroop, ATroop& EnemyTroop) override;
+
+	virtual void Move(ATroop* Troop, ATile* Tile) override; 
+	
+	virtual void EndTurn() override;
+
+	UFUNCTION()
+	virtual void ResetPlayer() override;
+
 	void SetMoved(bool Value);
 
 	bool CanMove();
@@ -40,6 +53,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool Moved;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UUEG_GameInstance* GameInstance;
 
 public:
 	// Called every frame

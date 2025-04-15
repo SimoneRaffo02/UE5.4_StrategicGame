@@ -8,9 +8,8 @@
 #include "GameFramework/GameModeBase.h"
 #include "UEG_GamemodeBase.generated.h"
 
-/**
- *
- */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnReset);
+
 UCLASS()
 class UE_GAME_API AUEG_GamemodeBase : public AGameModeBase
 {
@@ -18,6 +17,8 @@ class UE_GAME_API AUEG_GamemodeBase : public AGameModeBase
 
 public:
 	AUEG_GamemodeBase();
+
+	void PostInitializeComponents();
 
 	int32 GetFieldSize();
 	
@@ -49,6 +50,9 @@ public:
 
 	double CurrentTime;
 
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnReset OnReset;
+
 protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -75,9 +79,13 @@ protected:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<ATroop> IAKnightClass;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UUEG_GameInstance* GameInstance;
+
 public:
 	virtual void BeginPlay() override;
 
+	UFUNCTION()
 	void ChoosePlayerAndStartGame();
 
 	void PlaceTroop(const int32 PlayerNumber, FVector& SpawnLocation);
@@ -85,4 +93,9 @@ public:
 	int32 GetNextPlayer(int32 Player);
 
 	void TurnNextPlayer();
+
+	bool IsWinCondition();
+
+	UFUNCTION()
+	void ResetGamemodeBase();
 };

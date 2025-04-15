@@ -50,6 +50,12 @@ void AGameField::GenerateObstacles()
 	}
 }
 
+void AGameField::RefreshGameField()
+{
+	ResetTilesMoveType();
+	SetTilesMaterial();
+}
+
 void AGameField::SetFieldSize(int32 NewFieldSize)
 {
 	FieldSize = NewFieldSize;
@@ -273,7 +279,6 @@ void AGameField::SearchAttackPaths(int32 StepNumber, ATroop& Troop, FVector2D Cu
 
 void AGameField::ResetTilesMoveType()
 {
-	AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
 	for (int32 I = 0; I < FieldSize; I++)
 	{
 		for (int32 J = 0; J < FieldSize; J++)
@@ -589,7 +594,9 @@ ATile* AGameField::GetTileByRelativeLocation(FVector RelativeLocation)
 FVector2D AGameField::GetGridLocationByRelativeLocation(FVector RelativeLocation)
 {
 	FVector Location = RelativeLocation / TileSize;
-	return FVector2D(Location.X, Location.Y);
+	int32 XPosition = FMath::RoundToInt(Location.X);
+	int32 YPosition = FMath::RoundToInt(Location.Y);
+	return FVector2D(XPosition, YPosition);
 }
 
 FVector AGameField::GetRelativeLocationByXY(int32 X, int32 Y)
@@ -597,9 +604,24 @@ FVector AGameField::GetRelativeLocationByXY(int32 X, int32 Y)
 	return TileSize * FVector(X, Y, 0);
 }
 
-FVector2D AGameField::GetPosition(const FHitResult& Hit)
+FString AGameField::GetTileName(ATile* Tile)
 {
-	return Cast<ATile>(Hit.GetActor())->GetGridLocation();
+	FVector2D TileCoordinates = Tile->GetGridLocation();
+	int32 XPosition = FMath::RoundToInt(TileCoordinates.X);
+	int32 YPosition = FMath::RoundToInt(TileCoordinates.Y + 1);
+
+	FString Name = TEXT("");
+
+	char Letter = static_cast<char>('A' + XPosition);
+	Name += FString(1, &Letter);
+	Name += FString::FromInt(YPosition);
+
+	return Name;
+}
+
+int32 AGameField::GetFieldSize()
+{
+	return FieldSize;
 }
 
 double AGameField::GetManhattanDistance(int32 Row, int32 Col, pair<int32, int32> Dest)
@@ -607,9 +629,26 @@ double AGameField::GetManhattanDistance(int32 Row, int32 Col, pair<int32, int32>
 	return FMath::Abs(Dest.first - Row) + FMath::Abs(Dest.second - Col);
 }
 
+void AGameField::ResetGameField()
+{
+	for (int32 I = 0; I < FieldSize; I++)
+	{
+		for (int32 J = 0; J < FieldSize; J++)
+		{
+			Field[FVector2D(I, J)]->ResetTile();
+		}
+	}
+	GenerateObstacles();
+	RefreshGameField();
+}
+
 void AGameField::BeginPlay()
 {
 	Super::BeginPlay();
-	AGameField::GenerateField();
+
+	AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
+	GamemodeBase->OnReset.AddDynamic(this, &AGameField::ResetGameField);
+
+	GenerateField();
 }
 

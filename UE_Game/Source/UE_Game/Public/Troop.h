@@ -25,6 +25,10 @@ public:
 	// Sets default values for this actor's properties
 	ATroop();
 
+	void SetAsArcher();
+
+	void SetAsKnight();
+
 	void SetMovement(int32 NewMovement);
 
 	void SetAttackRange(int32 NewAttackRange);
@@ -32,6 +36,10 @@ public:
 	void SetMinAttackDamage(int32 NewMinAttackDamage);
 
 	void SetMaxAttackDamage(int32 NewMaxAttackDamage);
+
+	void SetMinCounterAttackDamage(int32 NewMinCounterAttackDamage);
+
+	void SetMaxCounterAttackDamage(int32 NewMaxCounterAttackDamage);
 
 	void SetHealth(int32 NewHealth);
 
@@ -49,11 +57,26 @@ public:
 
 	int32 GetMaxAttackDamage();
 
+	int32 GetMinCounterAttackDamage();
+
+	int32 GetMaxCounterAttackDamage();
+
 	int32 GetHealth();
 
 	EAttackType GetAttackType();
 
 	bool IsSelected();
+
+	bool CanMove();
+
+	bool CanAttack();
+
+	int32 Attack(ATroop& EnemyTroop);
+
+	void HideAndDisableCollision(); 
+	
+	UFUNCTION()
+	void SelfDestroy();
 
 protected:
 	// Called when the game starts or when spawned
@@ -72,6 +95,12 @@ protected:
 	int32 MaxAttackDamage;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	int32 MinCounterAttackDamage;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	int32 MaxCounterAttackDamage;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	int32 Health;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -80,9 +109,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool bSelected;
 
-	TArray<std::pair<int32, int32>> CurrentPath;
-
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool IsMoving;
+
+	TArray<std::pair<int32, int32>> CurrentPath;
 
 	int32 PathIndex;
 

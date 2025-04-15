@@ -12,6 +12,30 @@ ATroop::ATroop()
 	bSelected = false;
 }
 
+void ATroop::SetAsArcher()
+{
+	SetMovement(3);
+	SetAttackType(EAttackType::RANGED);
+	SetAttackRange(10);
+	SetMinAttackDamage(4);
+	SetMaxAttackDamage(8);
+	SetMinCounterAttackDamage(1);
+	SetMaxCounterAttackDamage(3);
+	SetHealth(20);
+}
+
+void ATroop::SetAsKnight()
+{
+	SetMovement(6);
+	SetAttackType(EAttackType::MELEE);
+	SetAttackRange(1);
+	SetMinAttackDamage(1);
+	SetMaxAttackDamage(6);
+	SetMinCounterAttackDamage(1);
+	SetMaxCounterAttackDamage(3);
+	SetHealth(40);
+}
+
 void ATroop::SetMovement(int32 NewMovement)
 {
 	Movement = NewMovement;
@@ -30,6 +54,16 @@ void ATroop::SetMinAttackDamage(int32 NewMinAttackDamage)
 void ATroop::SetMaxAttackDamage(int32 NewMaxAttackDamage)
 {
 	MaxAttackDamage = NewMaxAttackDamage;
+}
+
+void ATroop::SetMinCounterAttackDamage(int32 NewMinCounterAttackDamage)
+{
+	MinCounterAttackDamage = NewMinCounterAttackDamage;
+}
+
+void ATroop::SetMaxCounterAttackDamage(int32 NewMaxCounterAttackDamage)
+{
+	MaxCounterAttackDamage = NewMaxCounterAttackDamage;
 }
 
 void ATroop::SetHealth(int32 NewHealth)
@@ -76,6 +110,16 @@ int32 ATroop::GetMaxAttackDamage()
 	return MaxAttackDamage;
 }
 
+int32 ATroop::GetMinCounterAttackDamage()
+{
+	return MinCounterAttackDamage;
+}
+
+int32 ATroop::GetMaxCounterAttackDamage()
+{
+	return MaxCounterAttackDamage;
+}
+
 int32 ATroop::GetHealth()
 {
 	return Health;
@@ -91,11 +135,107 @@ bool ATroop::IsSelected()
 	return bSelected;
 }
 
+bool ATroop::CanMove()
+{
+	AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
+
+	GamemodeBase->GetGameField()->EvaluatePossibleMoves(this);
+
+	TArray<ATile*> AvailableMoveTiles;
+
+	for (int32 Col = 0; Col < GamemodeBase->GetGameField()->GetFieldSize(); Col++)
+	{
+		for (int32 Row = 0; Row < GamemodeBase->GetGameField()->GetFieldSize(); Row++)
+		{
+			if (GamemodeBase->GetGameField()->GetTile(Col, Row)->GetMoveType() == EMoveType::MOVE)
+			{
+				AvailableMoveTiles.Add(GamemodeBase->GetGameField()->GetTile(Col, Row));
+			}
+		}
+	}
+
+	GamemodeBase->GetGameField()->ResetTilesMoveType();
+
+	return AvailableMoveTiles.Num() > 0;
+}
+
+bool ATroop::CanAttack()
+{
+	AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
+
+	GamemodeBase->GetGameField()->EvaluatePossibleMoves(this);
+
+	TArray<ATile*> AvailableAttackTiles;
+
+	for (int32 Col = 0; Col < GamemodeBase->GetGameField()->GetFieldSize(); Col++)
+	{
+		for (int32 Row = 0; Row < GamemodeBase->GetGameField()->GetFieldSize(); Row++)
+		{
+			if (GamemodeBase->GetGameField()->GetTile(Col, Row)->GetMoveType() == EMoveType::ATTACK)
+			{
+				AvailableAttackTiles.Add(GamemodeBase->GetGameField()->GetTile(Col, Row));
+			}
+		}
+	}
+
+	GamemodeBase->GetGameField()->ResetTilesMoveType();
+
+	return AvailableAttackTiles.Num() > 0;
+}
+
+int32 ATroop::Attack(ATroop& EnemyTroop)
+{
+	AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
+	int32 Damage = FMath::RandRange(MinAttackDamage, MaxAttackDamage);
+	EnemyTroop.SetHealth(EnemyTroop.GetHealth() - Damage);
+	if (EnemyTroop.GetHealth() <= 0)
+	{
+		EnemyTroop.SetHealth(0);
+		GamemodeBase->GetGameField()->GetTileByRelativeLocation(EnemyTroop.GetActorLocation())->SetTroop(nullptr);
+		GamemodeBase->GetGameField()->GetTileByRelativeLocation(EnemyTroop.GetActorLocation())->SetTileStatus(ETileStatus::FREE);
+		EnemyTroop.HideAndDisableCollision();
+	}
+	FVector2D TroopGridLocation = GamemodeBase->GetGameField()->GetGridLocationByRelativeLocation(GetActorLocation());
+	int32 TroopXPosition = FMath::RoundToInt(TroopGridLocation.X);
+	int32 TroopYPosition = FMath::RoundToInt(TroopGridLocation.Y);
+	FVector2D EnemyGridLocation = GamemodeBase->GetGameField()->GetGridLocationByRelativeLocation(EnemyTroop.GetActorLocation());
+	int32 EnemyXPosition = FMath::RoundToInt(EnemyGridLocation.X);
+	int32 EnemyYPosition = FMath::RoundToInt(EnemyGridLocation.Y);
+	pair<int32, int32> EnemyCoordinates = make_pair(EnemyXPosition, EnemyYPosition);
+	int32 EnemyDistance = GamemodeBase->GetGameField()->GetManhattanDistance(TroopXPosition, TroopYPosition, EnemyCoordinates);
+	if (AttackType == EAttackType::RANGED && EnemyDistance <= EnemyTroop.GetAttackRange())
+	{
+		int32 CounterAttackDamage = FMath::RandRange(EnemyTroop.GetMinCounterAttackDamage(), EnemyTroop.GetMaxCounterAttackDamage());
+		Health -= CounterAttackDamage;
+		if (Health <= 0)
+		{
+			Health = 0;
+			GamemodeBase->GetGameField()->GetTileByRelativeLocation(GetActorLocation())->SetTroop(nullptr);
+			GamemodeBase->GetGameField()->GetTileByRelativeLocation(GetActorLocation())->SetTileStatus(ETileStatus::FREE);
+			HideAndDisableCollision();
+		}
+	}
+	return Damage;
+}
+
+void ATroop::HideAndDisableCollision()
+{
+	SetActorHiddenInGame(true);
+	SetActorEnableCollision(false);
+}
+
+void ATroop::SelfDestroy()
+{
+	Destroy();
+}
+
 // Called when the game starts or when spawned
 void ATroop::BeginPlay()
 {
 	Super::BeginPlay();
 
+	AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
+	GamemodeBase->OnReset.AddDynamic(this, &ATroop::SelfDestroy);
 }
 
 // Called every frame
@@ -111,21 +251,55 @@ void ATroop::Tick(float DeltaTime)
 			FinalLocation.Z = GamemodeBase->TroopPlacingHeight;
 			SetActorLocation(FinalLocation);
 			FVector2D GridLocation = GamemodeBase->GetGameField()->GetGridLocationByRelativeLocation(GetActorLocation());
-			for (int32 J = CurrentPath.Num() - 1; J >= 0; J--)
-			{
-				UE_LOG(LogTemp, Log, TEXT("%d %d"), CurrentPath[J].first, CurrentPath[J].second);
-			}
-			UE_LOG(LogTemp, Log, TEXT("Grid: %f %f"), GridLocation.X, GridLocation.Y);
 			int32 XPosition = FMath::RoundToInt(GridLocation.X);
 			int32 YPosition = FMath::RoundToInt(GridLocation.Y);
-			UE_LOG(LogTemp, Log, TEXT("Pos: %d %d"), XPosition, YPosition);
 			GamemodeBase->GetGameField()->GetTile(CurrentPath[CurrentPath.Num() - 1].first, CurrentPath[CurrentPath.Num() - 1].second)->SetTroop(nullptr);
 			GamemodeBase->GetGameField()->GetTile(CurrentPath[CurrentPath.Num() - 1].first, CurrentPath[CurrentPath.Num() - 1].second)->SetTileStatus(ETileStatus::FREE);
 			GamemodeBase->GetGameField()->GetTile(XPosition, YPosition)->SetTroop(this);
 			GamemodeBase->GetGameField()->GetTile(XPosition, YPosition)->SetTileStatus(ETileStatus::OCCUPIED);
 			GamemodeBase->GetGameField()->EvaluatePossibleMoves(this);
-			GamemodeBase->GetGameField()->FilterAttackTiles();
-			GamemodeBase->GetGameField()->SetTilesMaterial();
+			if (GamemodeBase->CurrentPlayer == 0)
+			{
+				GamemodeBase->GetGameField()->FilterAttackTiles();
+				GamemodeBase->GetGameField()->SetTilesMaterial();
+			}
+			else
+			{
+				GamemodeBase->GetGameField()->RefreshGameField();
+
+				//Se la pedina mossa non può attaccare
+				if (!CanAttack())
+				{
+					UE_LOG(LogTemp, Log, TEXT("Nemico non puo' attaccare: finisce il turno"));
+					GamemodeBase->TurnNextPlayer();
+					return;
+				}
+				else
+				{
+					//Array con tutte le caselle che si possono attaccare
+					TArray<ATile*> AvailableAttackTiles;
+
+					GamemodeBase->GetGameField()->EvaluatePossibleMoves(this);
+
+					//Prendiamo in considerazione tutte le caselle che si possono attaccare
+					for (int32 Col = 0; Col < GamemodeBase->GetGameField()->GetFieldSize(); Col++)
+					{
+						for (int32 Row = 0; Row < GamemodeBase->GetGameField()->GetFieldSize(); Row++)
+						{
+							if (GamemodeBase->GetGameField()->GetTile(Col, Row)->GetMoveType() == EMoveType::ATTACK)
+							{
+								AvailableAttackTiles.Add(GamemodeBase->GetGameField()->GetTile(Col, Row));
+							}
+						}
+					}
+
+					//Scelgo una casella randomica di cui attaccare la truppa
+					ATile* SelectedTile = AvailableAttackTiles[FMath::RandRange(0, AvailableAttackTiles.Num() - 1)];
+					ATroop* EnemyTroop = SelectedTile->GetTroop();
+
+					GamemodeBase->Players[1]->Attack(*this, *EnemyTroop);
+				}
+			}
 		}
 		else if (CurrentPath.Num() != 0)
 		{
