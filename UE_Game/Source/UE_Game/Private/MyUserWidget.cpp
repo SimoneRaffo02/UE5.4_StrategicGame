@@ -33,12 +33,14 @@ void UMyUserWidget::NativeConstruct()
 		GameInstance->OnMessageChange.AddDynamic(this, &UMyUserWidget::SetMessageText);
 		GameInstance->OnTurnChange.AddDynamic(this, &UMyUserWidget::UpdateTurnCounter);
 		GameInstance->OnAction.AddDynamic(this, &UMyUserWidget::AddToHistory);
+		GameInstance->OnPointsChange.AddDynamic(this, &UMyUserWidget::UpdatePoints);
 	}
 
 	AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
 	if (GamemodeBase)
 	{
 		GamemodeBase->OnReset.AddDynamic(this, &UMyUserWidget::ResetUI);
+		GamemodeBase->OnTroopHealthChange.AddDynamic(this, &UMyUserWidget::UpdateTroopsHealth);
 	}
 }
 
@@ -94,6 +96,64 @@ void UMyUserWidget::AddToHistory()
 	}
 }
 
+void UMyUserWidget::UpdateTroopsHealth()
+{
+	AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
+
+	for (int32 PlayerIndex = 0; PlayerIndex < GamemodeBase->Players.Num(); PlayerIndex++)
+	{
+		for (ATroop* Troop : GamemodeBase->Players[PlayerIndex]->GetTroops())
+		{
+			if (Troop->GetAttackType() == EAttackType::RANGED)
+			{
+				if (PlayerIndex == 0)
+				{
+					if (HumanArcherHealthText)
+					{
+						HumanArcherHealthText->SetText(FText::FromString(FString::Printf(TEXT("%d / %d"), Troop->GetHealth(), ATroop::ARCHER_MAX_HEALTH)));
+					}
+				}
+				else
+				{
+					if (AIArcherHealthText)
+					{
+						AIArcherHealthText->SetText(FText::FromString(FString::Printf(TEXT("%d / %d"), Troop->GetHealth(), ATroop::ARCHER_MAX_HEALTH)));
+					}
+				}
+			}
+			else
+			{
+				if (PlayerIndex == 0)
+				{
+					if (HumanKnightHealthText)
+					{
+						HumanKnightHealthText->SetText(FText::FromString(FString::Printf(TEXT("%d / %d"), Troop->GetHealth(), ATroop::KNIGHT_MAX_HEALTH)));
+					}
+				}
+				else
+				{
+					if (AIKnightHealthText)
+					{
+						AIKnightHealthText->SetText(FText::FromString(FString::Printf(TEXT("%d / %d"), Troop->GetHealth(), ATroop::KNIGHT_MAX_HEALTH)));
+					}
+				}
+			}
+		}
+	}
+}
+
+void UMyUserWidget::UpdatePoints()
+{
+	if (HPPointsText)
+	{
+		HPPointsText->SetText(FText::FromString(FString::Printf(TEXT("%d"), GameInstance->GetPlayerScore())));
+	}
+	if (AIPointsText)
+	{
+		AIPointsText->SetText(FText::FromString(FString::Printf(TEXT("%d"), GameInstance->GetAIScore())));
+	}
+}
+
 void UMyUserWidget::ResetUI()
 {
 	if (TurnCounter)
@@ -103,5 +163,21 @@ void UMyUserWidget::ResetUI()
 	if (ActionsHistory)
 	{
 		ActionsHistory->SetText(FText::FromString(TEXT("")));
+	}
+	if (HumanArcherHealthText)
+	{
+		HumanArcherHealthText->SetText(FText::FromString(TEXT("0 / 0")));
+	}
+	if (AIArcherHealthText)
+	{
+		AIArcherHealthText->SetText(FText::FromString(TEXT("0 / 0")));
+	}
+	if (HumanKnightHealthText)
+	{
+		HumanKnightHealthText->SetText(FText::FromString(TEXT("0 / 0")));
+	}
+	if (AIKnightHealthText)
+	{
+		AIKnightHealthText->SetText(FText::FromString(TEXT("0 / 0")));
 	}
 }

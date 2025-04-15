@@ -9,6 +9,7 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMessageChange);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTurnChange);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAction);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPointsChange);
 
 
 UCLASS()
@@ -32,7 +33,11 @@ public:
 
 	void IncreasePlayerScore();
 
-	void IncreaseIAScore();
+	void IncreaseAIScore();
+
+	int32 GetPlayerScore();
+
+	int32 GetAIScore();
 
 	FString GetMessage();
 
@@ -47,6 +52,9 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnAction OnAction;
 
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnPointsChange OnPointsChange;
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	FString Message;
@@ -58,5 +66,5 @@ protected:
 	int32 PlayerScore;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	int32 IAScore;
+	int32 AIScore;
 };

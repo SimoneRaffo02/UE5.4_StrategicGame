@@ -21,7 +21,7 @@ void ATroop::SetAsArcher()
 	SetMaxAttackDamage(8);
 	SetMinCounterAttackDamage(1);
 	SetMaxCounterAttackDamage(3);
-	SetHealth(20);
+	SetHealth(ARCHER_MAX_HEALTH);
 }
 
 void ATroop::SetAsKnight()
@@ -33,7 +33,7 @@ void ATroop::SetAsKnight()
 	SetMaxAttackDamage(6);
 	SetMinCounterAttackDamage(1);
 	SetMaxCounterAttackDamage(3);
-	SetHealth(40);
+	SetHealth(KNIGHT_MAX_HEALTH);
 }
 
 void ATroop::SetMovement(int32 NewMovement)

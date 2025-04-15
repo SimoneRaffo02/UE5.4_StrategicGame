@@ -73,13 +73,10 @@ void AHumanPlayer::Attack(ATroop& PlayerTroop, ATroop& EnemyTroop)
 	int32 Damage = PlayerTroop.Attack(EnemyTroop);
 	GameInstance->AddAttackToHistory(0, PlayerTroop.GetAttackType(), GamemodeBase->GetGameField()->GetTileName(GamemodeBase->GetGameField()->GetTileByRelativeLocation(EnemyTroop.GetActorLocation())), Damage);
 	GamemodeBase->GetGameField()->RefreshGameField();
+	GamemodeBase->OnTroopHealthChange.Broadcast();
 	if (!GamemodeBase->IsWinCondition())
 	{
 		GamemodeBase->TurnNextPlayer();
-	}
-	else
-	{
-		//Da inserire distruzione di massa
 	}
 }
 

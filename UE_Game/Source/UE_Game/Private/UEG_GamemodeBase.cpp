@@ -162,6 +162,7 @@ void AUEG_GamemodeBase::PlaceTroop(const int32 PlayerNumber, FVector& SpawnLocat
 					bKnightPlacingTurn = false;
 				}
 			}
+			OnTroopHealthChange.Broadcast();
 			this->TurnNextPlayer();
 		}
 		else
@@ -198,6 +199,7 @@ void AUEG_GamemodeBase::PlaceTroop(const int32 PlayerNumber, FVector& SpawnLocat
 					IsGameStarted = false;
 				}
 			}
+			OnTroopHealthChange.Broadcast();
 			this->TurnNextPlayer();
 		}
 		else
@@ -268,7 +270,7 @@ bool AUEG_GamemodeBase::IsWinCondition()
 	{
 		IsGameStarted = false;
 		IsGameOver = true;
-		GameInstance->SetMessage(TEXT("Nessun vincitore: Pareggio!"));
+		GameInstance->SetMessage(TEXT("Pareggio!"));
 	}
 	//Se c'è uno sconfitto (e quindi un vincitore)
 	else if (LosersCounter == 1)
@@ -292,6 +294,7 @@ bool AUEG_GamemodeBase::IsWinCondition()
 	{
 		return false;
 	}
+
 	return true;
 }
 

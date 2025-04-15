@@ -7,7 +7,7 @@
 UUEG_GameInstance::UUEG_GameInstance()
 {
 	PlayerScore = 0;
-	IAScore = 0;
+	AIScore = 0;
 	Message = FString(TEXT("Sorteggio"));
 }
 
@@ -83,11 +83,23 @@ void UUEG_GameInstance::SetTurn()
 void UUEG_GameInstance::IncreasePlayerScore()
 {
 	PlayerScore++;
+	OnPointsChange.Broadcast();
 }
 
-void UUEG_GameInstance::IncreaseIAScore()
+void UUEG_GameInstance::IncreaseAIScore()
 {
-	IAScore++;
+	AIScore++;
+	OnPointsChange.Broadcast();
+}
+
+int32 UUEG_GameInstance::GetPlayerScore()
+{
+	return PlayerScore;
+}
+
+int32 UUEG_GameInstance::GetAIScore()
+{
+	return AIScore;
 }
 
 FString UUEG_GameInstance::GetMessage()

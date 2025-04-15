@@ -27,6 +27,24 @@ protected:
 	UTextBlock* MessageText;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget), Category = "UI")
+	UTextBlock* HumanArcherHealthText;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget), Category = "UI")
+	UTextBlock* HumanKnightHealthText;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget), Category = "UI")
+	UTextBlock* AIArcherHealthText;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget), Category = "UI")
+	UTextBlock* AIKnightHealthText;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget), Category = "UI")
+	UTextBlock* HPPointsText;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget), Category = "UI")
+	UTextBlock* AIPointsText;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget), Category = "UI")
 	UScrollBox* ActionsHistoryScrollBox;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget), Category = "UI")
@@ -58,6 +76,12 @@ public:
 
 	UFUNCTION()
 	void AddToHistory();
+
+	UFUNCTION()
+	void UpdateTroopsHealth();
+
+	UFUNCTION()
+	void UpdatePoints();
 
 	UFUNCTION()
 	void ResetUI();

@@ -124,4 +124,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	static const int32 ARCHER_MAX_HEALTH = 20;
+
+	static const int32 KNIGHT_MAX_HEALTH = 40;
 };

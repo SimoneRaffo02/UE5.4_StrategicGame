@@ -49,15 +49,10 @@ void ARandomPlayer::Attack(ATroop& PlayerTroop, ATroop& EnemyTroop)
 	int32 Damage = PlayerTroop.Attack(EnemyTroop);
 	GameInstance->AddAttackToHistory(1, PlayerTroop.GetAttackType(), GamemodeBase->GetGameField()->GetTileName(GamemodeBase->GetGameField()->GetTileByRelativeLocation(EnemyTroop.GetActorLocation())), Damage);
 	GamemodeBase->GetGameField()->RefreshGameField();
-	UE_LOG(LogTemp, Log, TEXT("Attacco nemico"));
-
+	GamemodeBase->OnTroopHealthChange.Broadcast();
 	if (!GamemodeBase->IsWinCondition())
 	{
 		GamemodeBase->TurnNextPlayer();
-	}
-	else
-	{
-		UE_LOG(LogTemp, Log, TEXT("Fine partita"));
 	}
 }
 
@@ -223,7 +218,7 @@ void ARandomPlayer::OnWin()
 	if (GameInstance)
 	{
 		GameInstance->SetMessage(TEXT("Vince l'AI!"));
-		GameInstance->IncreaseIAScore();
+		GameInstance->IncreaseAIScore();
 	}
 }
 

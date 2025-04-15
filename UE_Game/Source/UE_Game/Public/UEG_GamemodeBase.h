@@ -9,6 +9,7 @@
 #include "UEG_GamemodeBase.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnReset);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTroopHealthChange);
 
 UCLASS()
 class UE_GAME_API AUEG_GamemodeBase : public AGameModeBase
@@ -52,6 +53,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnReset OnReset;
+
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnTroopHealthChange OnTroopHealthChange;
 
 protected:
 
