@@ -32,12 +32,18 @@ public:
 
 	virtual void EndTurn() override;
 
+	virtual int32 NextTroop() override;
+
+	virtual void Action() override;
+
 	UFUNCTION()
 	virtual void ResetPlayer() override;
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	int32 CurrentTroop;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UUEG_GameInstance* GameInstance;

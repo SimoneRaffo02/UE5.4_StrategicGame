@@ -2,9 +2,7 @@
 
 #pragma once
 
-#include "UEG_GameInstance.h"
 #include "Troop.h"
-#include "Tile.h"
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
 #include "PlayerInterface.generated.h"
@@ -17,16 +15,14 @@ class UPlayerInterface : public UInterface
 };
 
 /**
- *
+ * 
  */
-class UE_GAME_API IPlayerInterface
+class GIOCOUE_API IPlayerInterface
 {
 	GENERATED_BODY()
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-	IPlayerInterface();
-
 	int32 PlayerNumber;
 
 	int32 PlacedArchers = 0;
@@ -45,33 +41,7 @@ public:
 
 	void UpdatePlacedKnights();
 
-	bool EveryTroopMadeAction();
-
-	bool EveryTroopAttacked();
-
-	void IncreaseTroopActionArrayLength();
-
-	void ResetTroopActionArray();
+	void ResetPlacedTroops();
 
 	virtual void OnTurn() {};
-
-	virtual void OnWin() {};
-
-	virtual void OnLose() {};
-
-	virtual void Attack(ATroop& PlayerTroop, ATroop& EnemyTroop) {};
-
-	virtual void Move(ATroop* Troop, ATile* Tile) {};
-
-	virtual void EndTurn() {};
-
-	virtual int32 NextTroop();
-
-	virtual void Action() {};
-
-	UFUNCTION()
-	virtual void ResetPlayer();
-
-protected:
-	TArray<bool> bTroopMadeAction;
 };

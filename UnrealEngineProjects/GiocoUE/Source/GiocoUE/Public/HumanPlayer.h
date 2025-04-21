@@ -9,7 +9,7 @@
 #include "HumanPlayer.generated.h"
 
 UCLASS()
-class UE_GAME_API AHumanPlayer : public APawn, public IPlayerInterface
+class GIOCOUE_API AHumanPlayer : public APawn, public IPlayerInterface
 {
 	GENERATED_BODY()
 
@@ -18,27 +18,6 @@ public:
 	AHumanPlayer();
 
 	virtual void OnTurn() override;
-
-	virtual void OnWin() override;
-
-	virtual void OnLose() override;
-
-	virtual void Attack(ATroop& PlayerTroop, ATroop& EnemyTroop) override;
-
-	virtual void Move(ATroop* Troop, ATile* Tile) override; 
-	
-	virtual void EndTurn() override;
-
-	virtual int32 NextTroop() override;
-
-	virtual void Action() override;
-
-	UFUNCTION()
-	virtual void ResetPlayer() override;
-
-	void ResetTroopsActions();
-
-	ATroop* GetSelectedTroop();
 
 protected:
 	// Called when the game starts or when spawned
@@ -50,13 +29,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool IsMyTurn;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	ATroop* SelectedTroop;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	UUEG_GameInstance* GameInstance;
-
-public:
+public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 

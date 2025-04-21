@@ -71,6 +71,11 @@ void IPlayerInterface::ResetTroopActionArray()
 	}
 }
 
+int32 IPlayerInterface::NextTroop()
+{
+	return -1;
+}
+
 void IPlayerInterface::ResetPlayer()
 {
 	PlacedArchers = 0;

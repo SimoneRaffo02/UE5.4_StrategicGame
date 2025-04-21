@@ -101,6 +101,15 @@ void AHumanPlayer::EndTurn()
 	IsMyTurn = false;
 }
 
+int32 AHumanPlayer::NextTroop()
+{
+	return -1;
+}
+
+void AHumanPlayer::Action()
+{
+}
+
 void AHumanPlayer::ResetPlayer()
 {
 	IPlayerInterface::ResetPlayer();

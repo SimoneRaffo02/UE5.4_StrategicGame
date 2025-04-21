@@ -306,8 +306,21 @@ void ATroop::Tick(float DeltaTime)
 				//Se la pedina mossa non può attaccare
 				if (!CanAttack())
 				{
-					UE_LOG(LogTemp, Log, TEXT("Nemico non puo' attaccare: finisce il turno"));
-					GamemodeBase->TurnNextPlayer();
+					int32 RandomPlayerCurrentTroop;
+					do
+					{
+						RandomPlayerCurrentTroop = GamemodeBase->Players[1]->NextTroop();
+					} while (RandomPlayerCurrentTroop != 0 && GamemodeBase->Players[1]->GetTroops()[RandomPlayerCurrentTroop]->GetHealth() == 0);
+
+					if (RandomPlayerCurrentTroop != 0)
+					{
+						GamemodeBase->Players[1]->Action();
+					}
+					else
+					{
+						GamemodeBase->TurnNextPlayer();
+					}
+
 					return;
 				}
 				else
@@ -334,6 +347,23 @@ void ATroop::Tick(float DeltaTime)
 					ATroop* EnemyTroop = SelectedTile->GetTroop();
 
 					GamemodeBase->Players[1]->Attack(*this, *EnemyTroop);
+					if (!GamemodeBase->IsWinCondition())
+					{
+						int32 RandomPlayerCurrentTroop;
+						do
+						{
+							RandomPlayerCurrentTroop = GamemodeBase->Players[1]->NextTroop();
+						} while (RandomPlayerCurrentTroop != 0 && GamemodeBase->Players[1]->GetTroops()[RandomPlayerCurrentTroop]->GetHealth() == 0);
+
+						if (RandomPlayerCurrentTroop != 0)
+						{
+							GamemodeBase->Players[1]->Action();
+						}
+						else
+						{
+							GamemodeBase->TurnNextPlayer();
+						}
+					}
 				}
 			}
 		}
