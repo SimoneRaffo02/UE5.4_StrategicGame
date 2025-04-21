@@ -75,12 +75,9 @@ void AHumanPlayer::Attack(ATroop& PlayerTroop, ATroop& EnemyTroop)
 	GameInstance->AddAttackToHistory(0, PlayerTroop.GetAttackType(), GamemodeBase->GetGameField()->GetTileName(GamemodeBase->GetGameField()->GetTileByRelativeLocation(EnemyTroop.GetActorLocation())), Damage);
 	GamemodeBase->GetGameField()->RefreshGameField();
 	GamemodeBase->OnTroopHealthChange.Broadcast();
-	if (!GamemodeBase->IsWinCondition())
-	{
-		bTroopMadeAction[PlayerTroop.GetTroopIndex()] = true;
-		PlayerTroop.SetMoved(true);
-		PlayerTroop.SetAttacked(true);
-	}
+	bTroopMadeAction[PlayerTroop.GetTroopIndex()] = true;
+	PlayerTroop.SetMoved(true);
+	PlayerTroop.SetAttacked(true);
 }
 
 void AHumanPlayer::Move(ATroop* Troop, ATile* Tile)
@@ -160,9 +157,10 @@ void AHumanPlayer::OnClick()
 
 	GetWorld()->GetFirstPlayerController()->GetHitResultUnderCursor(ECollisionChannel::ECC_Pawn, true, Hit);
 
-	if (Hit.bBlockingHit && IsMyTurn)
+	AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
+
+	if (Hit.bBlockingHit && IsMyTurn && !GamemodeBase->IsTroopInMotion())
 	{
-		AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
 		if (GamemodeBase->bArcherPlacingTurn || GamemodeBase->bKnightPlacingTurn)
 		{
 			if (ATile* CurrentTile = Cast<ATile>(Hit.GetActor()))

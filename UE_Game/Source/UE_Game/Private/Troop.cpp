@@ -90,10 +90,12 @@ void ATroop::SetTroopIndex(int32 NewTroopIndex)
 
 void ATroop::SetCurrentPath(TArray<pair<int32, int32>> Path)
 {
+	AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
+	GamemodeBase->SetTroopInMotion(true);
+	IsMoving = true;
 	CurrentPath = Path;
 	PathIndex = CurrentPath.Num() - 2;
 	StepsTaken = 0;
-	IsMoving = true;
 	CurrentTime = FPlatformTime::Seconds();
 }
 
@@ -279,6 +281,7 @@ void ATroop::Tick(float DeltaTime)
 		{
 			AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
 			IsMoving = false;
+			GamemodeBase->SetTroopInMotion(false);
 			FVector FinalLocation = GamemodeBase->GetGameField()->GetTile(CurrentPath[0].first, CurrentPath[0].second)->GetActorLocation();
 			FinalLocation.Z = GamemodeBase->TroopPlacingHeight;
 			SetActorLocation(FinalLocation);

@@ -45,6 +45,8 @@ public:
 
 	int TroopPlacingHeight;
 
+	bool bTroopInMotion;
+
 	double StepTime;
 
 	int32 StepsForTile;
@@ -99,6 +101,10 @@ public:
 	void TurnNextPlayer();
 
 	bool IsWinCondition();
+
+	void SetTroopInMotion(bool Value);
+
+	bool IsTroopInMotion();
 
 	UFUNCTION()
 	void ResetGamemodeBase();

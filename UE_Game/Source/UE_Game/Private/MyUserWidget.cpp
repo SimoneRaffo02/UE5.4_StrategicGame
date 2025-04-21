@@ -47,7 +47,7 @@ void UMyUserWidget::NativeConstruct()
 void UMyUserWidget::OnEndTurnButtonClick()
 {
 	AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
-	if (GamemodeBase->CurrentPlayer == 0 && GamemodeBase->Players[0]->EveryTroopMadeAction())
+	if (GamemodeBase->CurrentPlayer == 0 && GamemodeBase->Players[0]->EveryTroopMadeAction() && !GamemodeBase->IsTroopInMotion())
 	{
 		GamemodeBase->GetGameField()->RefreshGameField();
 		GamemodeBase->Players[0]->EndTurn();

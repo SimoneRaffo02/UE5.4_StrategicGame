@@ -18,6 +18,7 @@ AUEG_GamemodeBase::AUEG_GamemodeBase()
 	ObstaclesPercentage = 50;
 	TroopPlacingHeight = 20;
 
+	bTroopInMotion = false;
 	StepTime = 0.01;
 	StepsForTile = 10;
 
@@ -239,6 +240,8 @@ void AUEG_GamemodeBase::TurnNextPlayer()
 
 bool AUEG_GamemodeBase::IsWinCondition()
 {
+	UE_LOG(LogTemp, Warning, TEXT("Turno %d: Win Condition Check"), CurrentTurn);
+
 	//Array che segna chi perde (può finire in pareggio la partita se una truppa uccide l'avversaria ma muore per il contraccolpo)
 	TArray<bool> IsLoser;
 	IsLoser.Init(true, Players.Num());
@@ -300,6 +303,16 @@ bool AUEG_GamemodeBase::IsWinCondition()
 	}
 
 	return true;
+}
+
+void AUEG_GamemodeBase::SetTroopInMotion(bool Value)
+{
+	bTroopInMotion = Value;
+}
+
+bool AUEG_GamemodeBase::IsTroopInMotion()
+{
+	return bTroopInMotion;
 }
 
 void AUEG_GamemodeBase::ResetGamemodeBase()
