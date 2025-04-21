@@ -148,9 +148,11 @@ void AUEG_GamemodeBase::PlaceTroop(const int32 PlayerNumber, FVector& SpawnLocat
 		if (Troop != nullptr)
 		{
 			Troop->SetAsArcher();
+			Troop->SetTroopIndex(Players[PlayerNumber]->GetTroops().Num());
 
 			Players[PlayerNumber]->GetTroops().Add(Troop);
 			Players[PlayerNumber]->UpdatePlacedArchers();
+			Players[PlayerNumber]->IncreaseTroopActionArrayLength();
 			GField->GetTileByRelativeLocation(SpawnLocation)->SetTroop(Troop);
 			bArcherPlacingTurn = false;
 			bKnightPlacingTurn = true;
@@ -185,9 +187,11 @@ void AUEG_GamemodeBase::PlaceTroop(const int32 PlayerNumber, FVector& SpawnLocat
 		if (Troop != nullptr)
 		{
 			Troop->SetAsKnight();
+			Troop->SetTroopIndex(Players[PlayerNumber]->GetTroops().Num());
 
 			Players[PlayerNumber]->GetTroops().Add(Troop);
 			Players[PlayerNumber]->UpdatePlacedKnights();
+			Players[PlayerNumber]->IncreaseTroopActionArrayLength();
 			GField->GetTileByRelativeLocation(SpawnLocation)->SetTroop(Troop);
 			bKnightPlacingTurn = false;
 			IsGameStarted = true;

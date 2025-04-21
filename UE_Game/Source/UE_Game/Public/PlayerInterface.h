@@ -45,6 +45,14 @@ public:
 
 	void UpdatePlacedKnights();
 
+	bool EveryTroopMadeAction();
+
+	bool EveryTroopAttacked();
+
+	void IncreaseTroopActionArrayLength();
+
+	void ResetTroopActionArray();
+
 	virtual void OnTurn() {};
 
 	virtual void OnWin() {};
@@ -61,4 +69,5 @@ public:
 	virtual void ResetPlayer();
 
 protected:
+	TArray<bool> bTroopMadeAction;
 };

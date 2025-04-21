@@ -47,6 +47,8 @@ public:
 
 	void SetSelected(bool Value);
 
+	void SetTroopIndex(int32 NewTroopIndex);
+
 	void SetCurrentPath(TArray<pair<int32, int32>> Path);
 
 	int32 GetMovement();
@@ -67,7 +69,17 @@ public:
 
 	bool IsSelected();
 
+	int32 GetTroopIndex();
+
 	bool CanMove();
+
+	void SetMoved(bool Value);
+
+	bool GetMoved();
+
+	void SetAttacked(bool Value);
+
+	bool GetAttacked();
 
 	bool CanAttack();
 
@@ -111,6 +123,15 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool IsMoving;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool Moved;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool Attacked;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	int32 TroopIndex;
 
 	TArray<std::pair<int32, int32>> CurrentPath;
 

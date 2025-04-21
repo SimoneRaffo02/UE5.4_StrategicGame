@@ -31,7 +31,8 @@ void AHumanPlayer::OnTurn()
 	GamemodeBase->GetGameField()->RefreshGameField();
 
 	IsMyTurn = true;
-	Moved = false;
+	ResetTroopsActions();
+	ResetTroopActionArray();
 
 	if (GameInstance)
 	{
@@ -76,7 +77,9 @@ void AHumanPlayer::Attack(ATroop& PlayerTroop, ATroop& EnemyTroop)
 	GamemodeBase->OnTroopHealthChange.Broadcast();
 	if (!GamemodeBase->IsWinCondition())
 	{
-		GamemodeBase->TurnNextPlayer();
+		bTroopMadeAction[PlayerTroop.GetTroopIndex()] = true;
+		PlayerTroop.SetMoved(true);
+		PlayerTroop.SetAttacked(true);
 	}
 }
 
@@ -91,16 +94,8 @@ void AHumanPlayer::Move(ATroop* Troop, ATile* Tile)
 	SelectedTroop->SetCurrentPath(Path);
 	GamemodeBase->GetGameField()->RefreshGameField();
 	GameInstance->AddMoveToHistory(0, SelectedTroop->GetAttackType(), GamemodeBase->GetGameField()->GetTileName(GamemodeBase->GetGameField()->GetTile(Src.first, Src.second)), GamemodeBase->GetGameField()->GetTileName(GamemodeBase->GetGameField()->GetTile(Dest.first, Dest.second)));
-}
 
-void AHumanPlayer::SetMoved(bool Value)
-{
-	Moved = Value;
-}
-
-bool AHumanPlayer::CanMove()
-{
-	return !Moved;
+	bTroopMadeAction[SelectedTroop->GetTroopIndex()] = true;
 }
 
 void AHumanPlayer::EndTurn()
@@ -113,7 +108,17 @@ void AHumanPlayer::ResetPlayer()
 {
 	IPlayerInterface::ResetPlayer();
 
+	bTroopMadeAction.Empty();
 	SelectedTroop = nullptr;
+}
+
+void AHumanPlayer::ResetTroopsActions()
+{
+	for (ATroop* Troop : Troops)
+	{
+		Troop->SetMoved(false);
+		Troop->SetAttacked(false);
+	}
 }
 
 ATroop* AHumanPlayer::GetSelectedTroop()
@@ -176,57 +181,66 @@ void AHumanPlayer::OnClick()
 			//Selezione truppa
 			if (ATroop* CurrentTroop = Cast<ATroop>(Hit.GetActor()))
 			{
-				if (Troops.Contains(CurrentTroop) && !Moved)
+				if (Troops.Contains(CurrentTroop) && !CurrentTroop->GetAttacked())
 				{
-					if (Troops.Contains(CurrentTroop))
+					if (CurrentTroop == SelectedTroop)
 					{
-						if (CurrentTroop == SelectedTroop)
+						CurrentTroop->SetSelected(false);
+						SelectedTroop = nullptr;
+						GamemodeBase->GetGameField()->RefreshGameField();
+						UE_LOG(LogTemp, Log, TEXT("Cliccato due volte"));
+					}
+					else
+					{
+						if (SelectedTroop != nullptr)
 						{
-							CurrentTroop->SetSelected(false);
-							SelectedTroop = nullptr;
-							GamemodeBase->GetGameField()->RefreshGameField();
-							UE_LOG(LogTemp, Log, TEXT("Cliccato due volte"));
-						}
-						else
-						{
-							if (SelectedTroop != nullptr)
+							for (ATroop* Troop : Troops)
 							{
-								for (ATroop* Troop : Troops)
+								if (Troop->IsSelected())
 								{
-									if (Troop->IsSelected())
-									{
-										Troop->SetSelected(false);
-									}
+									Troop->SetSelected(false);
 								}
-								GamemodeBase->GetGameField()->ResetTilesMoveType();
 							}
-							CurrentTroop->SetSelected(true);
-							SelectedTroop = CurrentTroop;
-							GamemodeBase->GetGameField()->EvaluatePossibleMoves(CurrentTroop);
-							GamemodeBase->GetGameField()->SetTilesMaterial();
+							GamemodeBase->GetGameField()->ResetTilesMoveType();
 						}
+						CurrentTroop->SetSelected(true);
+						SelectedTroop = CurrentTroop;
+						GamemodeBase->GetGameField()->EvaluatePossibleMoves(CurrentTroop);
+						if (SelectedTroop->GetMoved())
+						{
+							GamemodeBase->GetGameField()->FilterAttackTiles();
+						}
+						GamemodeBase->GetGameField()->SetTilesMaterial();
 					}
 				}
 				else if (GamemodeBase->Players[GamemodeBase->GetNextPlayer(GamemodeBase->CurrentPlayer)]->GetTroops().Contains(CurrentTroop) && GamemodeBase->GetGameField()->GetTileByRelativeLocation(CurrentTroop->GetActorLocation())->GetMoveType() == EMoveType::ATTACK)
 				{
 					Attack(*SelectedTroop, *CurrentTroop);
-					EndTurn();
+					if (!GamemodeBase->IsWinCondition() && EveryTroopAttacked())
+					{
+						GamemodeBase->TurnNextPlayer();
+						EndTurn();
+					}
 				}
 			}
 			else if (ATile* CurrentTile = Cast<ATile>(Hit.GetActor()))
 			{
 				if (SelectedTroop != nullptr)
 				{
-					if (CurrentTile->GetMoveType() == EMoveType::MOVE && !Moved)
+					if (CurrentTile->GetMoveType() == EMoveType::MOVE && !SelectedTroop->GetMoved())
 					{
-						Moved = true;
+						SelectedTroop->SetMoved(true);
 						Move(nullptr, CurrentTile);
 					}
-					if (CurrentTile->GetMoveType() == EMoveType::ATTACK)
+					if (CurrentTile->GetMoveType() == EMoveType::ATTACK && !SelectedTroop->GetAttacked())
 					{
 						ATroop* EnemyTroop = CurrentTile->GetTroop();
 						Attack(*SelectedTroop, *EnemyTroop);
-						EndTurn();
+						if (!GamemodeBase->IsWinCondition() && EveryTroopAttacked())
+						{
+							GamemodeBase->TurnNextPlayer();
+							EndTurn();
+						}
 					}
 				}
 			}

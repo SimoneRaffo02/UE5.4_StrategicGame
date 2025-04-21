@@ -32,9 +32,7 @@ public:
 	UFUNCTION()
 	virtual void ResetPlayer() override;
 
-	void SetMoved(bool Value);
-
-	bool CanMove();
+	void ResetTroopsActions();
 
 	ATroop* GetSelectedTroop();
 
@@ -50,9 +48,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	ATroop* SelectedTroop;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	bool Moved;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UUEG_GameInstance* GameInstance;

@@ -9,6 +9,8 @@ ATroop::ATroop()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
+	Moved = false;
+	Attacked = false;
 	bSelected = false;
 }
 
@@ -81,6 +83,11 @@ void ATroop::SetSelected(bool Value)
 	bSelected = Value;
 }
 
+void ATroop::SetTroopIndex(int32 NewTroopIndex)
+{
+	TroopIndex = NewTroopIndex;
+}
+
 void ATroop::SetCurrentPath(TArray<pair<int32, int32>> Path)
 {
 	CurrentPath = Path;
@@ -135,6 +142,11 @@ bool ATroop::IsSelected()
 	return bSelected;
 }
 
+int32 ATroop::GetTroopIndex()
+{
+	return TroopIndex;
+}
+
 bool ATroop::CanMove()
 {
 	AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
@@ -157,6 +169,26 @@ bool ATroop::CanMove()
 	GamemodeBase->GetGameField()->ResetTilesMoveType();
 
 	return AvailableMoveTiles.Num() > 0;
+}
+
+void ATroop::SetMoved(bool Value)
+{
+	Moved = Value;
+}
+
+bool ATroop::GetMoved()
+{
+	return Moved;
+}
+
+void ATroop::SetAttacked(bool Value)
+{
+	Attacked = Value;
+}
+
+bool ATroop::GetAttacked()
+{
+	return Attacked;
 }
 
 bool ATroop::CanAttack()
@@ -263,6 +295,7 @@ void ATroop::Tick(float DeltaTime)
 				GamemodeBase->GetGameField()->FilterAttackTiles();
 				GamemodeBase->GetGameField()->SetTilesMaterial();
 			}
+			//Turno nemico
 			else
 			{
 				GamemodeBase->GetGameField()->RefreshGameField();

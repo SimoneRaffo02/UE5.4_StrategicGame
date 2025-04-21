@@ -34,6 +34,43 @@ void IPlayerInterface::UpdatePlacedKnights()
 	PlacedKnights++;
 }
 
+bool IPlayerInterface::EveryTroopMadeAction()
+{
+	for (int32 I = 0; I < bTroopMadeAction.Num(); I++)
+	{
+		if (bTroopMadeAction[I] == false && Troops[I]->GetHealth() > 0)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+bool IPlayerInterface::EveryTroopAttacked()
+{
+	for (ATroop* Troop : Troops)
+	{
+		if (!Troop->GetAttacked() && Troop->GetHealth() > 0)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+void IPlayerInterface::IncreaseTroopActionArrayLength()
+{
+	bTroopMadeAction.Add(false);
+}
+
+void IPlayerInterface::ResetTroopActionArray()
+{
+	for (int32 I = 0; I < bTroopMadeAction.Num(); I++)
+	{
+		bTroopMadeAction[I] = false;
+	}
+}
+
 void IPlayerInterface::ResetPlayer()
 {
 	PlacedArchers = 0;
