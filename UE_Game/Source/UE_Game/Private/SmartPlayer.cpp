@@ -338,12 +338,15 @@ ATroop* ASmartPlayer::GetClosestEnemy(ATroop& Troop, AUEG_GamemodeBase& Gamemode
 
 	for (ATroop* Enemy : GamemodeBase.Players[0]->GetTroops())
 	{
-		int32 EnemyCol = GamemodeBase.GetGameField()->GetGridLocationByRelativeLocation(Enemy->GetActorLocation()).X;
-		int32 EnemyRow = GamemodeBase.GetGameField()->GetGridLocationByRelativeLocation(Enemy->GetActorLocation()).Y;
-		if (GamemodeBase.GetGameField()->GetManhattanDistance(EnemyCol, EnemyRow, TroopCoordinates) < MinDistance)
+		if (Enemy->GetHealth() > 0)
 		{
-			MinDistance = GamemodeBase.GetGameField()->GetManhattanDistance(EnemyCol, EnemyRow, TroopCoordinates);
-			ClosestEnemy = Enemy;
+			int32 EnemyCol = GamemodeBase.GetGameField()->GetGridLocationByRelativeLocation(Enemy->GetActorLocation()).X;
+			int32 EnemyRow = GamemodeBase.GetGameField()->GetGridLocationByRelativeLocation(Enemy->GetActorLocation()).Y;
+			if (GamemodeBase.GetGameField()->GetManhattanDistance(EnemyCol, EnemyRow, TroopCoordinates) < MinDistance)
+			{
+				MinDistance = GamemodeBase.GetGameField()->GetManhattanDistance(EnemyCol, EnemyRow, TroopCoordinates);
+				ClosestEnemy = Enemy;
+			}
 		}
 	}
 
