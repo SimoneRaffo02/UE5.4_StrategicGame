@@ -30,6 +30,8 @@ void AHumanPlayer::OnTurn()
 	AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
 	GamemodeBase->GetGameField()->RefreshGameField();
 
+	UE_LOG(LogTemp, Log, TEXT("Truppe nella mappa: %d"), GamemodeBase->Players[0]->GetTroops().Num() + GamemodeBase->Players[0]->GetTroops().Num());
+
 	IsMyTurn = true;
 	ResetTroopsActions();
 	ResetTroopActionArray();
@@ -62,10 +64,6 @@ void AHumanPlayer::OnWin()
 		GameInstance->SetMessage(TEXT("Vince Giocatore!"));
 		GameInstance->IncreasePlayerScore();
 	}
-}
-
-void AHumanPlayer::OnLose()
-{
 }
 
 void AHumanPlayer::Attack(ATroop& PlayerTroop, ATroop& EnemyTroop)
@@ -104,10 +102,6 @@ void AHumanPlayer::EndTurn()
 int32 AHumanPlayer::NextTroop()
 {
 	return -1;
-}
-
-void AHumanPlayer::Action()
-{
 }
 
 void AHumanPlayer::ResetPlayer()

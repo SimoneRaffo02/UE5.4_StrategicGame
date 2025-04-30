@@ -11,6 +11,13 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnReset);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTroopHealthChange);
 
+UENUM()
+enum class EOpponentType : uint8
+{
+	RANDOM	UMETA(DisplayName = "RANDOM"),
+	SMART	UMETA(DisplayName = "SMART")
+};
+
 UCLASS()
 class UE_GAME_API AUEG_GamemodeBase : public AGameModeBase
 {
@@ -52,6 +59,9 @@ public:
 	int32 StepsForTile;
 
 	double CurrentTime;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EOpponentType OpponentType;
 
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnReset OnReset;

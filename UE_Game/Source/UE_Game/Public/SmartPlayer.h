@@ -2,20 +2,20 @@
 
 #pragma once
 
-#include "Camera/CameraComponent.h"
-#include "PlayerInterface.h"
+#include "ArcherReachableTileDetails.h"
 #include "CoreMinimal.h"
+#include "PlayerInterface.h"
 #include "GameFramework/Pawn.h"
-#include "HumanPlayer.generated.h"
+#include "SmartPlayer.generated.h"
 
 UCLASS()
-class UE_GAME_API AHumanPlayer : public APawn, public IPlayerInterface
+class UE_GAME_API ASmartPlayer : public APawn, public IPlayerInterface
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this pawn's properties
-	AHumanPlayer();
+	ASmartPlayer();
 
 	virtual void OnTurn() override;
 
@@ -23,41 +23,35 @@ public:
 
 	virtual void Attack(ATroop& PlayerTroop, ATroop& EnemyTroop) override;
 
-	virtual void Move(ATroop* Troop, ATile* Tile) override; 
-	
+	virtual void Move(ATroop* Troop, ATile* Tile) override;
+
 	virtual void EndTurn() override;
 
 	virtual int32 NextTroop() override;
 
+	virtual void Action() override;
+
+	void SortTilesDetails(TArray<UArcherReachableTileDetails*>& TilesDetails);
+
+	ATroop* GetClosestEnemy(ATroop& CurrentTroop, AUEG_GamemodeBase& GamemodeBase);
+
 	UFUNCTION()
 	virtual void ResetPlayer() override;
-
-	void ResetTroopsActions();
-
-	ATroop* GetSelectedTroop();
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	UCameraComponent* Camera;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	bool IsMyTurn;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	ATroop* SelectedTroop;
+	int32 CurrentTroop;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UUEG_GameInstance* GameInstance;
 
-public:
+public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	void OnClick();
 };

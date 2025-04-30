@@ -17,34 +17,6 @@ ARandomPlayer::ARandomPlayer() : Super()
 	CurrentTroop = 0;
 }
 
-bool ARandomPlayer::TroopsCanMove()
-{
-	AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
-
-	for (ATroop* Troop : GamemodeBase->Players[1]->GetTroops())
-	{
-		if (Troop->GetHealth() > 0 && Troop->CanMove())
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-bool ARandomPlayer::TroopsCanAttack()
-{
-	AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
-
-	for (ATroop* Troop : GamemodeBase->Players[1]->GetTroops())
-	{
-		if (Troop->GetHealth() > 0 && Troop->CanAttack())
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
 void ARandomPlayer::Attack(ATroop& PlayerTroop, ATroop& EnemyTroop)
 {
 	AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
@@ -65,10 +37,6 @@ void ARandomPlayer::Move(ATroop* Troop, ATile* Tile)
 	GamemodeBase->GetGameField()->RefreshGameField();
 	GamemodeBase->GetGameField()->DrawPath(Path);
 	Troop->SetCurrentPath(Path); GameInstance->AddMoveToHistory(1, Troop->GetAttackType(), GamemodeBase->GetGameField()->GetTileName(GamemodeBase->GetGameField()->GetTile(Src.first, Src.second)), GamemodeBase->GetGameField()->GetTileName(GamemodeBase->GetGameField()->GetTile(Dest.first, Dest.second)));
-}
-
-void ARandomPlayer::EndTurn()
-{
 }
 
 void ARandomPlayer::Action()
@@ -242,10 +210,6 @@ void ARandomPlayer::OnWin()
 		GameInstance->SetMessage(TEXT("Vince l'AI!"));
 		GameInstance->IncreaseAIScore();
 	}
-}
-
-void ARandomPlayer::OnLose()
-{
 }
 
 // Called when the game starts or when spawned

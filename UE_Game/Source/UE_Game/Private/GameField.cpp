@@ -77,6 +77,20 @@ void AGameField::SetTilesMaterial()
 	}
 }
 
+void AGameField::SetEveryTileMoveTile()
+{
+	for (int32 X = 0; X < FieldSize; X++)
+	{
+		for (int32 Y = 0; Y < FieldSize; Y++)
+		{
+			if (Field[FVector2D(X, Y)]->GetTileStatus() == ETileStatus::FREE)
+			{
+				Field[FVector2D(X, Y)]->SetMoveType(EMoveType::MOVE);
+			}
+		}
+	}
+}
+
 bool AGameField::CheckUnreachableTiles(int32 XPosition, int32 YPosition)
 {
 	//Creo una scacchiera basata su quella attuale che useremo per l'analisi del nuovo ostacolo
@@ -166,7 +180,7 @@ void AGameField::EvaluatePossibleMoves(ATroop* Troop)
 	int32 YPosition = FMath::RoundToInt(TroopLocation.Y);
 	TroopLocation = FVector2D(XPosition, YPosition);
 	SearchMovePaths(0, *Troop, TroopLocation);
-	SearchAttackPaths(0, *Troop, TroopLocation);
+	SearchAttackPaths(*Troop);
 }
 
 void AGameField::SearchMovePaths(int32 StepNumber, ATroop& Troop, FVector2D CurrentLocation)
@@ -217,7 +231,69 @@ void AGameField::SearchMovePaths(int32 StepNumber, ATroop& Troop, FVector2D Curr
 	}
 }
 
-void AGameField::SearchAttackPaths(int32 StepNumber, ATroop& Troop, FVector2D CurrentLocation)
+void AGameField::SearchAttackPaths(ATroop& Troop)
+{
+	AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
+	AGameField* GameField = GamemodeBase->GetGameField();
+	FVector2D TroopLocation = GameField->GetTileByRelativeLocation(Troop.GetActorLocation())->GetGridLocation();
+
+	if (Troop.GetAttackType() == EAttackType::RANGED)
+	{
+		for (ATroop* EnemyTroop : GamemodeBase->Players[GamemodeBase->GetNextPlayer(Troop.GetOwnerPlayer())]->GetTroops())
+		{
+			if (EnemyTroop->GetHealth() > 0)
+			{
+				FVector2D EnemyLocation = GameField->GetTileByRelativeLocation(EnemyTroop->GetActorLocation())->GetGridLocation();
+
+				int32 Distance = FMath::Abs(TroopLocation.X - EnemyLocation.X) + FMath::Abs(TroopLocation.Y - EnemyLocation.Y);
+				if (Distance <= Troop.GetAttackRange())
+				{
+					GameField->GetTileByRelativeLocation(EnemyTroop->GetActorLocation())->SetMoveType(EMoveType::ATTACK);
+				}
+			}
+		}
+	}
+	else if (Troop.GetAttackType() == EAttackType::MELEE)
+	{
+
+		for (ATroop* EnemyTroop : GamemodeBase->Players[GamemodeBase->GetNextPlayer(Troop.GetOwnerPlayer())]->GetTroops())
+		{
+			if (EnemyTroop->GetHealth() > 0)
+			{
+				FVector2D EnemyLocation = GameField->GetTileByRelativeLocation(EnemyTroop->GetActorLocation())->GetGridLocation();
+
+				GameField->GetTile(EnemyLocation.X, EnemyLocation.Y)->SetTroop(nullptr);
+				GameField->GetTile(EnemyLocation.X, EnemyLocation.Y)->SetTileStatus(ETileStatus::FREE);
+				GameField->GetTile(EnemyLocation.X, EnemyLocation.Y)->SetMoveType(EMoveType::MOVE);
+
+				TArray<pair<int32, int32>> Path;
+				pair<int32, int32> Src = make_pair(TroopLocation.X, TroopLocation.Y);
+				pair<int32, int32> Dest = make_pair(EnemyLocation.X, EnemyLocation.Y);
+				GamemodeBase->GetGameField()->AStar(Src, Dest, Path);
+
+				if (Path.Num() > 0)
+				{
+					Path.Pop();
+				}
+
+				GameField->GetTile(EnemyLocation.X, EnemyLocation.Y)->SetTroop(EnemyTroop);
+				GameField->GetTile(EnemyLocation.X, EnemyLocation.Y)->SetTileStatus(ETileStatus::OCCUPIED);
+
+				if (Path.Num() > 0 && Path.Num() <= Troop.GetAttackRange())
+				{
+					GameField->GetTileByRelativeLocation(EnemyTroop->GetActorLocation())->SetMoveType(EMoveType::ATTACK);
+				}
+				else
+				{
+					GameField->GetTileByRelativeLocation(EnemyTroop->GetActorLocation())->SetMoveType(EMoveType::NONE);
+				}
+			}
+		}
+	}
+}
+
+/*
+void AGameField::SearchAttackPaths(int32 StepNumber, ATroop& Troop, FVector2D CurrentLocation, int32 Player)
 {
 	if (StepNumber < Troop.GetAttackRange())
 	{
@@ -225,57 +301,127 @@ void AGameField::SearchAttackPaths(int32 StepNumber, ATroop& Troop, FVector2D Cu
 		if (CurrentLocation.X - 1 >= 0 && Field.Find(FVector2D(CurrentLocation.X - 1, CurrentLocation.Y)))
 		{
 			ATile* LeftTile = Field[FVector2D(CurrentLocation.X - 1, CurrentLocation.Y)];
-			if (LeftTile->GetTileStatus() == ETileStatus::OCCUPIED && GamemodeBase->Players[GamemodeBase->GetNextPlayer(GamemodeBase->CurrentPlayer)]->GetTroops().Contains(LeftTile->GetTroop()))
+			if (LeftTile->GetTileStatus() == ETileStatus::OCCUPIED && Troop.GetOwnerPlayer() != LeftTile->GetTroop()->GetOwnerPlayer())
 			{
+				UE_LOG(LogTemp, Log, TEXT("RILEVATO NEMICO SINISTRA - %s: Attaccante: %d, Difensore: %d"), *GetTileName(LeftTile), Troop.GetOwnerPlayer(), LeftTile->GetTroop()->GetOwnerPlayer());
 				LeftTile->SetMoveType(EMoveType::ATTACK);
-				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X - 1, CurrentLocation.Y));
+				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X - 1, CurrentLocation.Y), Player);
 			}
 			else
 			{
-				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X - 1, CurrentLocation.Y));
+				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X - 1, CurrentLocation.Y), Player);
 			}
 		}
 		if (CurrentLocation.X + 1 < FieldSize && Field.Find(FVector2D(CurrentLocation.X + 1, CurrentLocation.Y)))
 		{
 			ATile* RightTile = Field[FVector2D(CurrentLocation.X + 1, CurrentLocation.Y)];
-			if (RightTile->GetTileStatus() == ETileStatus::OCCUPIED && GamemodeBase->Players[GamemodeBase->GetNextPlayer(GamemodeBase->CurrentPlayer)]->GetTroops().Contains(RightTile->GetTroop()))
+			if (RightTile->GetTileStatus() == ETileStatus::OCCUPIED && Troop.GetOwnerPlayer() != RightTile->GetTroop()->GetOwnerPlayer())
 			{
+				UE_LOG(LogTemp, Log, TEXT("RILEVATO NEMICO DESTRA - %s: Attaccante: %d, Difensore: %d"), *GetTileName(RightTile), Troop.GetOwnerPlayer(), RightTile->GetTroop()->GetOwnerPlayer());
 				RightTile->SetMoveType(EMoveType::ATTACK);
-				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X + 1, CurrentLocation.Y));
+				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X + 1, CurrentLocation.Y), Player);
 			}
 			else
 			{
-				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X + 1, CurrentLocation.Y));
+				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X + 1, CurrentLocation.Y), Player);
 			}
 		}
 		if (CurrentLocation.Y - 1 >= 0 && Field.Find(FVector2D(CurrentLocation.X, CurrentLocation.Y - 1)))
 		{
 			ATile* UpperTile = Field[FVector2D(CurrentLocation.X, CurrentLocation.Y - 1)];
-			if (UpperTile->GetTileStatus() == ETileStatus::OCCUPIED && GamemodeBase->Players[GamemodeBase->GetNextPlayer(GamemodeBase->CurrentPlayer)]->GetTroops().Contains(UpperTile->GetTroop()))
+			if (UpperTile->GetTileStatus() == ETileStatus::OCCUPIED && Troop.GetOwnerPlayer() != UpperTile->GetTroop()->GetOwnerPlayer())
 			{
+				UE_LOG(LogTemp, Log, TEXT("RILEVATO NEMICO SOPRA - %s: Attaccante: %d, Difensore: %d"), *GetTileName(UpperTile), Troop.GetOwnerPlayer(), UpperTile->GetTroop()->GetOwnerPlayer());
 				UpperTile->SetMoveType(EMoveType::ATTACK);
-				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X, CurrentLocation.Y - 1));
+				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X, CurrentLocation.Y - 1), Player);
 			}
 			else
 			{
-				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X, CurrentLocation.Y - 1));
+				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X, CurrentLocation.Y - 1), Player);
 			}
 		}
 		if (CurrentLocation.Y + 1 < FieldSize && Field.Find(FVector2D(CurrentLocation.X, CurrentLocation.Y + 1)))
 		{
 			ATile* LowerTile = Field[FVector2D(CurrentLocation.X, CurrentLocation.Y + 1)];
-			if (LowerTile->GetTileStatus() == ETileStatus::OCCUPIED && GamemodeBase->Players[GamemodeBase->GetNextPlayer(GamemodeBase->CurrentPlayer)]->GetTroops().Contains(LowerTile->GetTroop()))
+			if (LowerTile->GetTileStatus() == ETileStatus::OCCUPIED && Troop.GetOwnerPlayer() != LowerTile->GetTroop()->GetOwnerPlayer())
 			{
+				UE_LOG(LogTemp, Log, TEXT("RILEVATO NEMICO SOTTO - %s: Attaccante: %d, Difensore: %d"), *GetTileName(LowerTile), Troop.GetOwnerPlayer(), LowerTile->GetTroop()->GetOwnerPlayer());
 				LowerTile->SetMoveType(EMoveType::ATTACK);
-				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X, CurrentLocation.Y + 1));
+				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X, CurrentLocation.Y + 1), Player);
 			}
 			else if (Troop.GetAttackType() == EAttackType::RANGED)
 			{
-				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X, CurrentLocation.Y + 1));
+				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X, CurrentLocation.Y + 1), Player);
+			}
+		}
+	}
+}*/
+
+/*
+void AGameField::SearchAttackPaths(int32 StepNumber, ATroop& Troop, FVector2D CurrentLocation, int32 Player)
+{
+	if (StepNumber < Troop.GetAttackRange())
+	{
+		AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
+		if (CurrentLocation.X - 1 >= 0 && Field.Find(FVector2D(CurrentLocation.X - 1, CurrentLocation.Y)))
+		{
+			ATile* LeftTile = Field[FVector2D(CurrentLocation.X - 1, CurrentLocation.Y)];
+			if (LeftTile->GetTileStatus() == ETileStatus::OCCUPIED && Troop.GetOwnerPlayer() != LeftTile->GetTroop()->GetOwnerPlayer())
+			{
+				UE_LOG(LogTemp, Log, TEXT("RILEVATO NEMICO SINISTRA - %s: Attaccante: %d, Difensore: %d"), *GetTileName(LeftTile), Troop.GetOwnerPlayer(), LeftTile->GetTroop()->GetOwnerPlayer());
+				LeftTile->SetMoveType(EMoveType::ATTACK);
+				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X - 1, CurrentLocation.Y), Player);
+			}
+			else
+			{
+				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X - 1, CurrentLocation.Y), Player);
+			}
+		}
+		if (CurrentLocation.X + 1 < FieldSize && Field.Find(FVector2D(CurrentLocation.X + 1, CurrentLocation.Y)))
+		{
+			ATile* RightTile = Field[FVector2D(CurrentLocation.X + 1, CurrentLocation.Y)];
+			if (RightTile->GetTileStatus() == ETileStatus::OCCUPIED && Troop.GetOwnerPlayer() != RightTile->GetTroop()->GetOwnerPlayer())
+			{
+				UE_LOG(LogTemp, Log, TEXT("RILEVATO NEMICO DESTRA - %s: Attaccante: %d, Difensore: %d"), *GetTileName(RightTile), Troop.GetOwnerPlayer(), RightTile->GetTroop()->GetOwnerPlayer());
+				RightTile->SetMoveType(EMoveType::ATTACK);
+				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X + 1, CurrentLocation.Y), Player);
+			}
+			else
+			{
+				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X + 1, CurrentLocation.Y), Player);
+			}
+		}
+		if (CurrentLocation.Y - 1 >= 0 && Field.Find(FVector2D(CurrentLocation.X, CurrentLocation.Y - 1)))
+		{
+			ATile* UpperTile = Field[FVector2D(CurrentLocation.X, CurrentLocation.Y - 1)];
+			if (UpperTile->GetTileStatus() == ETileStatus::OCCUPIED && Troop.GetOwnerPlayer() != UpperTile->GetTroop()->GetOwnerPlayer())
+			{
+				UE_LOG(LogTemp, Log, TEXT("RILEVATO NEMICO SOPRA - %s: Attaccante: %d, Difensore: %d"), *GetTileName(UpperTile), Troop.GetOwnerPlayer(), UpperTile->GetTroop()->GetOwnerPlayer());
+				UpperTile->SetMoveType(EMoveType::ATTACK);
+				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X, CurrentLocation.Y - 1), Player);
+			}
+			else
+			{
+				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X, CurrentLocation.Y - 1), Player);
+			}
+		}
+		if (CurrentLocation.Y + 1 < FieldSize && Field.Find(FVector2D(CurrentLocation.X, CurrentLocation.Y + 1)))
+		{
+			ATile* LowerTile = Field[FVector2D(CurrentLocation.X, CurrentLocation.Y + 1)];
+			if (LowerTile->GetTileStatus() == ETileStatus::OCCUPIED && Troop.GetOwnerPlayer() != LowerTile->GetTroop()->GetOwnerPlayer())
+			{
+				UE_LOG(LogTemp, Log, TEXT("RILEVATO NEMICO SOTTO - %s: Attaccante: %d, Difensore: %d"), *GetTileName(LowerTile), Troop.GetOwnerPlayer(), LowerTile->GetTroop()->GetOwnerPlayer());
+				LowerTile->SetMoveType(EMoveType::ATTACK);
+				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X, CurrentLocation.Y + 1), Player);
+			}
+			else if (Troop.GetAttackType() == EAttackType::RANGED)
+			{
+				SearchAttackPaths(StepNumber + 1, Troop, FVector2D(CurrentLocation.X, CurrentLocation.Y + 1), Player);
 			}
 		}
 	}
 }
+*/
 
 void AGameField::ResetTilesMoveType()
 {
@@ -546,6 +692,10 @@ void AGameField::AStar(pair<int32, int32> Src, pair<int32, int32> Dest, TArray<p
 				}
 			}
 		}
+	}
+	if (!bFoundDestination)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Destinazione non trovata"));
 	}
 }
 

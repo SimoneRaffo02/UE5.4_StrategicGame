@@ -6,6 +6,7 @@
 #include "RandomPlayer.h"
 #include "UEG_PlayerController.h"
 #include "HumanPlayer.h"
+#include "SmartPlayer.h"
 #include "EngineUtils.h"
 #include <Kismet/GameplayStatics.h>
 
@@ -15,7 +16,7 @@ AUEG_GamemodeBase::AUEG_GamemodeBase()
 	DefaultPawnClass = AHumanPlayer::StaticClass();
 	
 	FieldSize = 25;
-	ObstaclesPercentage = 50;
+	ObstaclesPercentage = 40;
 	TroopPlacingHeight = 20;
 
 	bTroopInMotion = false;
@@ -79,7 +80,12 @@ void AUEG_GamemodeBase::BeginPlay()
 	HumanPlayer->SetActorLocationAndRotation(CameraPos, FRotator(-90, -90, 0));
 
 	//Random Player
-	ARandomPlayer* AI = GetWorld()->SpawnActor<ARandomPlayer>(FVector(), FRotator());
+	//ARandomPlayer* AI = GetWorld()->SpawnActor<ARandomPlayer>(FVector(), FRotator());
+	//OpponentType = EOpponentType::RANDOM;
+
+	//Smart Player
+	ASmartPlayer* AI = GetWorld()->SpawnActor<ASmartPlayer>(FVector(), FRotator());
+	OpponentType = EOpponentType::SMART;
 
 	Players.Add(HumanPlayer);
 	Players.Add(AI);
@@ -148,7 +154,7 @@ void AUEG_GamemodeBase::PlaceTroop(const int32 PlayerNumber, FVector& SpawnLocat
 		}
 		if (Troop != nullptr)
 		{
-			Troop->SetAsArcher();
+			Troop->SetAsArcher(CurrentPlayer);
 			Troop->SetTroopIndex(Players[PlayerNumber]->GetTroops().Num());
 
 			Players[PlayerNumber]->GetTroops().Add(Troop);
@@ -187,7 +193,7 @@ void AUEG_GamemodeBase::PlaceTroop(const int32 PlayerNumber, FVector& SpawnLocat
 		}
 		if (Troop != nullptr)
 		{
-			Troop->SetAsKnight();
+			Troop->SetAsKnight(CurrentPlayer);
 			Troop->SetTroopIndex(Players[PlayerNumber]->GetTroops().Num());
 
 			Players[PlayerNumber]->GetTroops().Add(Troop);
@@ -286,11 +292,7 @@ bool AUEG_GamemodeBase::IsWinCondition()
 		IsGameOver = true;
 		for (int32 I = 0; I < Players.Num(); I++)
 		{
-			if (IsLoser[I] == true)
-			{
-				Players[I]->OnLose();
-			}
-			else
+			if (IsLoser[I] == false)
 			{
 				Players[I]->OnWin();
 			}

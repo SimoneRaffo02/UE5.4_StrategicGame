@@ -9,6 +9,8 @@
 
 using namespace std;
 
+class UArcherReachableTileDetails;
+
 UENUM()
 enum class EAttackType : uint8
 {
@@ -25,9 +27,11 @@ public:
 	// Sets default values for this actor's properties
 	ATroop();
 
-	void SetAsArcher();
+	void SetOwnerPlayer(int32 Player);
 
-	void SetAsKnight();
+	void SetAsArcher(int32 Player);
+
+	void SetAsKnight(int32 Player);
 
 	void SetMovement(int32 NewMovement);
 
@@ -83,9 +87,13 @@ public:
 
 	bool CanAttack();
 
+	int32 GetOwnerPlayer();
+
 	int32 Attack(ATroop& EnemyTroop);
 
 	void HideAndDisableCollision(); 
+
+	void SetMoveTileDetails(UArcherReachableTileDetails* NewMoveTileDetails);
 	
 	UFUNCTION()
 	void SelfDestroy();
@@ -133,6 +141,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	int32 TroopIndex;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UArcherReachableTileDetails* MoveTileDetails;
+
 	TArray<std::pair<int32, int32>> CurrentPath;
 
 	int32 PathIndex;
@@ -140,6 +151,8 @@ protected:
 	int32 StepsTaken;
 
 	double CurrentTime;
+
+	int32 OwnerPlayer;
 
 public:
 	// Called every frame

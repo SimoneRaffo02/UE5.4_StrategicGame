@@ -29,9 +29,7 @@ struct FNode
 	float H;
 
 	// Costruttore
-	FNode()
-		: ParentRow(-1), ParentCol(-1), F(FLT_MAX), G(FLT_MAX), H(FLT_MAX) {
-	}
+	FNode() : ParentRow(-1), ParentCol(-1), F(FLT_MAX), G(FLT_MAX), H(FLT_MAX) {}
 };
 
 UCLASS()
@@ -54,6 +52,8 @@ public:
 
 	void SetTilesMaterial();
 
+	void SetEveryTileMoveTile();
+
 	bool CheckUnreachableTiles(int32 XPosition, int32 YPosition);
 
 	void UpdateAnalysisField(TMap<FVector2D, TArray<bool>>& AnalysisField, FVector2D CurrentLocation);
@@ -62,7 +62,7 @@ public:
 
 	void SearchMovePaths(int32 StepNumber, ATroop& Troop, FVector2D CurrentLocation);
 
-	void SearchAttackPaths(int32 StepNumber, ATroop& Troop, FVector2D CurrentLocation);
+	void SearchAttackPaths(ATroop& Troop);
 
 	void ResetTilesMoveType();
 
@@ -101,6 +101,8 @@ public:
 	int32 GetFieldSize();
 
 	double GetManhattanDistance(int32 Row, int32 Col, pair<int32, int32> Dest);
+
+	AGameField* DeepCopyObstacleGameField();
 
 	UFUNCTION()
 	void ResetGameField();

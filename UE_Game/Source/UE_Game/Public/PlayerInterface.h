@@ -57,8 +57,6 @@ public:
 
 	virtual void OnWin() {};
 
-	virtual void OnLose() {};
-
 	virtual void Attack(ATroop& PlayerTroop, ATroop& EnemyTroop) {};
 
 	virtual void Move(ATroop* Troop, ATile* Tile) {};

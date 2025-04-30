@@ -3,6 +3,7 @@
 
 #include "Troop.h"
 #include "UEG_GamemodeBase.h"
+#include "ArcherReachableTileDetails.h"
 
 // Sets default values
 ATroop::ATroop()
@@ -12,10 +13,18 @@ ATroop::ATroop()
 	Moved = false;
 	Attacked = false;
 	bSelected = false;
+
+	OwnerPlayer = -1;
 }
 
-void ATroop::SetAsArcher()
+void ATroop::SetOwnerPlayer(int32 Player)
 {
+	OwnerPlayer = Player;
+}
+
+void ATroop::SetAsArcher(int32 Player)
+{
+	SetOwnerPlayer(Player);
 	SetMovement(3);
 	SetAttackType(EAttackType::RANGED);
 	SetAttackRange(10);
@@ -26,8 +35,9 @@ void ATroop::SetAsArcher()
 	SetHealth(ARCHER_MAX_HEALTH);
 }
 
-void ATroop::SetAsKnight()
+void ATroop::SetAsKnight(int32 Player)
 {
+	SetOwnerPlayer(Player);
 	SetMovement(6);
 	SetAttackType(EAttackType::MELEE);
 	SetAttackRange(1);
@@ -217,6 +227,11 @@ bool ATroop::CanAttack()
 	return AvailableAttackTiles.Num() > 0;
 }
 
+int32 ATroop::GetOwnerPlayer()
+{
+	return OwnerPlayer;
+}
+
 int32 ATroop::Attack(ATroop& EnemyTroop)
 {
 	AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
@@ -258,6 +273,11 @@ void ATroop::HideAndDisableCollision()
 	SetActorEnableCollision(false);
 }
 
+void ATroop::SetMoveTileDetails(UArcherReachableTileDetails* NewMoveTileDetails)
+{
+	MoveTileDetails = NewMoveTileDetails;
+}
+
 void ATroop::SelfDestroy()
 {
 	Destroy();
@@ -282,9 +302,13 @@ void ATroop::Tick(float DeltaTime)
 			AUEG_GamemodeBase* GamemodeBase = Cast<AUEG_GamemodeBase>(GetWorld()->GetAuthGameMode());
 			IsMoving = false;
 			GamemodeBase->SetTroopInMotion(false);
-			FVector FinalLocation = GamemodeBase->GetGameField()->GetTile(CurrentPath[0].first, CurrentPath[0].second)->GetActorLocation();
-			FinalLocation.Z = GamemodeBase->TroopPlacingHeight;
-			SetActorLocation(FinalLocation);
+			FVector FinalLocation;
+			if (CurrentPath.Num() > 0)
+			{
+				FinalLocation = GamemodeBase->GetGameField()->GetTile(CurrentPath[0].first, CurrentPath[0].second)->GetActorLocation();
+				FinalLocation.Z = GamemodeBase->TroopPlacingHeight;
+				SetActorLocation(FinalLocation);
+			}
 			FVector2D GridLocation = GamemodeBase->GetGameField()->GetGridLocationByRelativeLocation(GetActorLocation());
 			int32 XPosition = FMath::RoundToInt(GridLocation.X);
 			int32 YPosition = FMath::RoundToInt(GridLocation.Y);
@@ -292,9 +316,9 @@ void ATroop::Tick(float DeltaTime)
 			GamemodeBase->GetGameField()->GetTile(CurrentPath[CurrentPath.Num() - 1].first, CurrentPath[CurrentPath.Num() - 1].second)->SetTileStatus(ETileStatus::FREE);
 			GamemodeBase->GetGameField()->GetTile(XPosition, YPosition)->SetTroop(this);
 			GamemodeBase->GetGameField()->GetTile(XPosition, YPosition)->SetTileStatus(ETileStatus::OCCUPIED);
-			GamemodeBase->GetGameField()->EvaluatePossibleMoves(this);
 			if (GamemodeBase->CurrentPlayer == 0)
 			{
+				GamemodeBase->GetGameField()->EvaluatePossibleMoves(this);
 				GamemodeBase->GetGameField()->FilterAttackTiles();
 				GamemodeBase->GetGameField()->SetTilesMaterial();
 			}
@@ -303,51 +327,12 @@ void ATroop::Tick(float DeltaTime)
 			{
 				GamemodeBase->GetGameField()->RefreshGameField();
 
-				//Se la pedina mossa non può attaccare
-				if (!CanAttack())
+				//Se il nemico è randomico
+				if (GamemodeBase->OpponentType == EOpponentType::RANDOM)
 				{
-					int32 RandomPlayerCurrentTroop;
-					do
-					{
-						RandomPlayerCurrentTroop = GamemodeBase->Players[1]->NextTroop();
-					} while (RandomPlayerCurrentTroop != 0 && GamemodeBase->Players[1]->GetTroops()[RandomPlayerCurrentTroop]->GetHealth() == 0);
-
-					if (RandomPlayerCurrentTroop != 0)
-					{
-						GamemodeBase->Players[1]->Action();
-					}
-					else
-					{
-						GamemodeBase->TurnNextPlayer();
-					}
-
-					return;
-				}
-				else
-				{
-					//Array con tutte le caselle che si possono attaccare
-					TArray<ATile*> AvailableAttackTiles;
-
 					GamemodeBase->GetGameField()->EvaluatePossibleMoves(this);
-
-					//Prendiamo in considerazione tutte le caselle che si possono attaccare
-					for (int32 Col = 0; Col < GamemodeBase->GetGameField()->GetFieldSize(); Col++)
-					{
-						for (int32 Row = 0; Row < GamemodeBase->GetGameField()->GetFieldSize(); Row++)
-						{
-							if (GamemodeBase->GetGameField()->GetTile(Col, Row)->GetMoveType() == EMoveType::ATTACK)
-							{
-								AvailableAttackTiles.Add(GamemodeBase->GetGameField()->GetTile(Col, Row));
-							}
-						}
-					}
-
-					//Scelgo una casella randomica di cui attaccare la truppa
-					ATile* SelectedTile = AvailableAttackTiles[FMath::RandRange(0, AvailableAttackTiles.Num() - 1)];
-					ATroop* EnemyTroop = SelectedTile->GetTroop();
-
-					GamemodeBase->Players[1]->Attack(*this, *EnemyTroop);
-					if (!GamemodeBase->IsWinCondition())
+					//Se la pedina mossa non può attaccare
+					if (!CanAttack())
 					{
 						int32 RandomPlayerCurrentTroop;
 						do
@@ -362,6 +347,104 @@ void ATroop::Tick(float DeltaTime)
 						else
 						{
 							GamemodeBase->TurnNextPlayer();
+						}
+
+						return;
+					}
+					else
+					{
+						//Array con tutte le caselle che si possono attaccare
+						TArray<ATile*> AvailableAttackTiles;
+
+						GamemodeBase->GetGameField()->EvaluatePossibleMoves(this);
+
+						//Prendiamo in considerazione tutte le caselle che si possono attaccare
+						for (int32 Col = 0; Col < GamemodeBase->GetGameField()->GetFieldSize(); Col++)
+						{
+							for (int32 Row = 0; Row < GamemodeBase->GetGameField()->GetFieldSize(); Row++)
+							{
+								if (GamemodeBase->GetGameField()->GetTile(Col, Row)->GetMoveType() == EMoveType::ATTACK)
+								{
+									AvailableAttackTiles.Add(GamemodeBase->GetGameField()->GetTile(Col, Row));
+								}
+							}
+						}
+
+						//Scelgo una casella randomica di cui attaccare la truppa
+						ATile* SelectedTile = AvailableAttackTiles[FMath::RandRange(0, AvailableAttackTiles.Num() - 1)];
+						ATroop* EnemyTroop = SelectedTile->GetTroop();
+
+						GamemodeBase->Players[1]->Attack(*this, *EnemyTroop);
+						if (!GamemodeBase->IsWinCondition())
+						{
+							int32 RandomPlayerCurrentTroop;
+							do
+							{
+								RandomPlayerCurrentTroop = GamemodeBase->Players[1]->NextTroop();
+							} while (RandomPlayerCurrentTroop != 0 && GamemodeBase->Players[1]->GetTroops()[RandomPlayerCurrentTroop]->GetHealth() == 0);
+
+							if (RandomPlayerCurrentTroop != 0)
+							{
+								GamemodeBase->Players[1]->Action();
+							}
+							else
+							{
+								GamemodeBase->TurnNextPlayer();
+							}
+						}
+					}
+				}
+
+				//Se il nemico è intelligente
+				else if (GamemodeBase->OpponentType == EOpponentType::SMART)
+				{
+					//Se non devo attaccare
+					if (MoveTileDetails == nullptr)
+					{
+						GamemodeBase->GetGameField()->RefreshGameField();
+						int32 RandomPlayerCurrentTroop;
+						do
+						{
+							RandomPlayerCurrentTroop = GamemodeBase->Players[1]->NextTroop();
+						} while (RandomPlayerCurrentTroop != 0 && GamemodeBase->Players[1]->GetTroops()[RandomPlayerCurrentTroop]->GetHealth() == 0);
+
+						if (RandomPlayerCurrentTroop != 0)
+						{
+							GamemodeBase->Players[1]->Action();
+						}
+						else
+						{
+							GamemodeBase->TurnNextPlayer();
+						}
+					}
+					//Se devo attaccare
+					else
+					{
+						if (MoveTileDetails->AttackableEnemies.Num() > 1)
+						{
+							MoveTileDetails->SortAttackableEnemies(*this);
+						}
+
+						GamemodeBase->Players[1]->Attack(*this, *MoveTileDetails->AttackableEnemies[0]);
+
+						GamemodeBase->GetGameField()->RefreshGameField();
+
+						if (!GamemodeBase->IsWinCondition())
+						{
+							int32 RandomPlayerCurrentTroop;
+							do
+							{
+								RandomPlayerCurrentTroop = GamemodeBase->Players[1]->NextTroop();
+							} while (RandomPlayerCurrentTroop != 0 && GamemodeBase->Players[1]->GetTroops()[RandomPlayerCurrentTroop]->GetHealth() == 0);
+
+							if (RandomPlayerCurrentTroop != 0)
+							{
+								GamemodeBase->Players[1]->Action();
+							}
+							else
+							{
+								GamemodeBase->TurnNextPlayer();
+							}
 						}
 					}
 				}
